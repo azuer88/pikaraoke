@@ -143,6 +143,12 @@ def add_random():
     return redirect(url_for("queue"))
 
 
+@app.route("/queue/allsongs", methods=["GET"])
+def all_songs():
+    k.queue_all_songs()
+    return redirect(url_for("queue"))
+
+
 @app.route("/queue/edit", methods=["GET"])
 def queue_edit():
     action = request.args["action"]
@@ -542,6 +548,32 @@ def reboot():
         flash("You don't have permission to Reboot", "is-danger")
     return redirect(url_for("home"))
 
+
+@app.route("/switch_songs")
+def switch_songs():
+    if not os.path.exists("/home/pi/karaoke-songs"):
+        logging.info("messages folder does not exists.")
+        return redirect(url_for("queue"))
+
+    k.download_path = "/home/pi/karaoke-songs/"
+    k.get_available_songs()
+
+    return redirect(url_for("queue"))
+
+
+@app.route("/switch_messages")
+def switch_message():
+    if not os.path.exists("/home/pi/messages"):
+        logging.info("messages folder does not exists.")
+        return redirect(url_for("queue"))
+
+    k.download_path = "/home/pi/messages/"
+    k.get_available_songs()
+
+
+    return redirect(url_for("queue"))
+
+
 @app.route("/expand_fs")
 def expand_fs():
     if (is_admin() and platform == "raspberry_pi"): 
@@ -811,7 +843,7 @@ if __name__ == "__main__":
     if (args.developer_mode):
         th = threading.Thread(target=k.run)
         th.start()
-        app.run(debug=True, port=args.port)
+        app.run(debug=True, host="0.0.0.0", port=args.port)
     else:
         # Start the CherryPy WSGI web server
         cherrypy.tree.graft(app, "/")
