@@ -549,6 +549,18 @@ def reboot():
     return redirect(url_for("home"))
 
 
+@app.route("/switch_to/<foldername>")
+def switch_folder(foldername):
+    download_path = k.download_path
+    base_path = os.path.dirname(download_path)
+    t_name = os.path.basename(foldername)
+    target = os.path.join(base_path, t_name)
+    if os.path.exists(target):
+        k.download_path = target
+        k.get_available_songs()
+    return redirect(url_for("browse"))
+
+
 @app.route("/switch_songs")
 def switch_songs():
     if not os.path.exists("/home/pi/karaoke-songs"):
