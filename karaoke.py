@@ -614,7 +614,7 @@ class Karaoke:
     def queue_all_songs(self):
         logging.info("Adding all songs to queue")
         for song in self.available_songs:
-            self.queue.append({"user": "", "file": song, "title": self.filename_from_path(song)}) 	
+            self.queue.append({"user": "the-messenger", "file": song, "title": self.filename_from_path(song)}) 	
         return True
 
     def queue_clear(self):
