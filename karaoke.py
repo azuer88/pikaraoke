@@ -96,6 +96,7 @@ class Karaoke:
         self.width = None
         self.height = None
         self.running = None
+        self.last_song = None
 
         logging.basicConfig(
             format="[%(asctime)s] %(levelname)s: %(message)s",
@@ -555,9 +556,10 @@ class Karaoke:
                 self.omxclient.kill()
 
     def play_file(self, file_path, semitones=0):
-
         self.now_playing = self.filename_from_path(file_path)
         self.now_playing_filename = file_path
+
+        self.last_song = self.now_playing
 
         if self.use_vlc:
             logging.info("Playing video in VLC: " + self.now_playing)
@@ -569,7 +571,16 @@ class Karaoke:
             logging.info("Playing video in omxplayer: " + self.now_playing)
             self.omxclient.play_file(file_path)
 
+        if self.last_song:
+            with open(os.path.join(self.download_path, 'played_songs'), "a") as f:
+                f.write("{}\n".format(self.last_song))
+            print("last_song: {}".format(self.last_song))
+            logging.info("last_song: {}".format(self.last_song))
+        else:
+            logging.info("No last song!!!")
+
         self.is_paused = False
+
         self.render_splash_screen()  # remove old previous track
 
     def transpose_current(self, semitones):
@@ -682,6 +693,7 @@ class Karaoke:
 
     def skip(self):
         if self.is_file_playing():
+            self.last_song = None  # don't count skipped songs
             logging.info("Skipping: " + self.now_playing)
             if self.use_vlc:
                 self.vlcclient.stop()
