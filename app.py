@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import argparse
 import datetime
 import json
@@ -8,10 +9,11 @@ import subprocess
 import sys
 import threading
 import time
-from functools import wraps
+# from functools import wraps
 
 import cherrypy
 import psutil
+# noinspection PyUnresolvedReferences
 from flask import (Flask, flash, jsonify, make_response, redirect,
                    render_template, request, send_file, send_from_directory,
                    url_for)
@@ -25,13 +27,14 @@ from lib.vlcclient import get_default_vlc_path
 try:
     from urllib.parse import quote, unquote
 except ImportError:
+    # noinspection PyUnresolvedReferences
     from urllib import quote, unquote
-
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 site_name = "PiKaraoke"
 admin_password = None
+
 
 def filename_from_path(file_path, remove_youtube_id=True):
     rc = os.path.basename(file_path)
@@ -50,11 +53,11 @@ def url_escape(filename):
 
 
 def is_admin():
-    if (admin_password == None):
+    if admin_password is None:
         return True
-    if ('admin' in request.cookies):
+    if 'admin' in request.cookies:
         a = request.cookies.get("admin")
-        if (a == admin_password):
+        if a == admin_password:
             return True
     return False
 
@@ -70,11 +73,12 @@ def home():
         admin=is_admin()
     )
 
+
 @app.route("/auth", methods=["POST"])
 def auth():
     d = request.form.to_dict()
     p = d["admin-password"]
-    if (p == admin_password):
+    if p == admin_password:
         resp = make_response(redirect('/'))
         expire_date = datetime.datetime.now()
         expire_date = expire_date + datetime.timedelta(days=90)
@@ -85,9 +89,11 @@ def auth():
         flash("Incorrect admin password!", "is-danger")
     return resp
 
+
 @app.route("/login")
 def login():
     return render_template("login.html")
+
 
 @app.route("/logout")
 def logout():
@@ -96,9 +102,10 @@ def logout():
     flash("Logged out of admin mode!", "is-success")
     return resp
 
+
 @app.route("/nowplaying")
 def nowplaying():
-    try: 
+    try:
         if len(k.queue) >= 1:
             next_song = k.queue[0]["title"]
             next_user = k.queue[0]["user"]
@@ -114,7 +121,7 @@ def nowplaying():
             "transpose_value": k.now_playing_transpose,
         }
         return json.dumps(rc)
-    except (Exception) as e:
+    except Exception as e:
         logging.error("Problem loading /nowplaying, pikaraoke may still be starting up: " + str(e))
         return ""
 
@@ -125,12 +132,14 @@ def queue():
         "queue.html", queue=k.queue, site_title=site_name, title="Queue", admin=is_admin()
     )
 
+
 @app.route("/get_queue")
 def get_queue():
     if len(k.queue) >= 1:
         return json.dumps(k.queue)
     else:
         return json.dumps([])
+
 
 @app.route("/queue/addrandom", methods=["GET"])
 def add_random():
@@ -198,8 +207,8 @@ def enqueue():
     #     flash("Song added to queue: " + song_title, "is-success")
     # else:
     #     flash("Song is already in queue: " + song_title, "is-danger")
-    #return redirect(url_for("home"))
-    return json.dumps({"song": song_title, "success": rc })
+    # return redirect(url_for("home"))
+    return json.dumps({"song": song_title, "success": rc})
 
 
 @app.route("/skip")
@@ -242,7 +251,7 @@ def vol_down():
 def search():
     if "search_string" in request.args:
         search_string = request.args["search_string"]
-        if ("non_karaoke" in request.args and request.args["non_karaoke"] == "true"):
+        if "non_karaoke" in request.args and request.args["non_karaoke"] == "true":
             search_results = k.get_search_results(search_string)
         else:
             search_results = k.get_karaoke_search_results(search_string)
@@ -258,6 +267,7 @@ def search():
         search_string=search_string,
     )
 
+
 @app.route("/autocomplete")
 def autocomplete():
     q = request.args.get('q').lower()
@@ -271,29 +281,30 @@ def autocomplete():
     )
     return response
 
+
 @app.route("/browse", methods=["GET"])
 def browse():
-    search = False
+    _search = False
     q = request.args.get('q')
     if q:
-        search = True
+        _search = True
     page = request.args.get(get_page_parameter(), type=int, default=1)
 
     available_songs = k.available_songs
 
     letter = request.args.get('letter')
-   
-    if (letter):
+
+    if letter:
         result = []
-        if (letter == "numeric"):
+        if letter == "numeric":
             for song in available_songs:
                 f = k.filename_from_path(song)[0]
-                if (f.isnumeric()):
+                if f.isnumeric():
                     result.append(song)
-        else: 
+        else:
             for song in available_songs:
                 f = k.filename_from_path(song).lower()
-                if (f.startswith(letter.lower())):
+                if f.startswith(letter.lower()):
                     result.append(song)
         available_songs = result
 
@@ -304,9 +315,10 @@ def browse():
     else:
         songs = available_songs
         sort_order = "Alphabetical"
-    
+
     results_per_page = 500
-    pagination = Pagination(css_framework='bulma', page=page, total=len(songs), search=search, record_name='songs', per_page=results_per_page)
+    pagination = Pagination(css_framework='bulma', page=page, total=len(songs), search=_search, record_name='songs',
+                            per_page=results_per_page)
     start_index = (page - 1) * (results_per_page - 1)
     return render_template(
         "files.html",
@@ -326,22 +338,22 @@ def download():
     song = d["song-url"]
     user = d["song-added-by"]
     if "queue" in d and d["queue"] == "on":
-        queue = True
+        _queue = True
     else:
-        queue = False
+        _queue = False
 
     # download in the background since this can take a few minutes
-    t = threading.Thread(target=k.download_video, args=[song, queue, user])
+    t = threading.Thread(target=k.download_video, args=[song, _queue, user])
     t.daemon = True
     t.start()
 
     flash_message = (
-        "Download started: '"
-        + song
-        + "'. This may take a couple of minutes to complete. "
+            "Download started: '"
+            + song
+            + "'. This may take a couple of minutes to complete. "
     )
 
-    if queue:
+    if _queue:
         flash_message += "Song will be added to queue."
     else:
         flash_message += 'Song will appear in the "available songs" list.'
@@ -395,12 +407,13 @@ def edit_file():
             old_name = d["old_file_name"]
             if k.is_song_in_queue(old_name):
                 # check one more time just in case someone added it during editing
-                flash(queue_error_msg + song_path, "is-danger")
+                # flash(queue_error_msg + song_path, "is-danger")
+                flash(queue_error_msg, "is-danger")
             else:
                 # check if new_name already exist
                 file_extension = os.path.splitext(old_name)[1]
                 if os.path.isfile(
-                    os.path.join(k.download_path, new_name + file_extension)
+                        os.path.join(k.download_path, new_name + file_extension)
                 ):
                     flash(
                         "Error Renaming file: '%s' to '%s'. Filename already exists."
@@ -420,6 +433,7 @@ def edit_file():
 
 @app.route("/info")
 def info():
+    # noinspection HttpUrlsUsage
     url = "http://" + request.host
 
     # cpu
@@ -430,12 +444,12 @@ def info():
     available = round(memory.available / 1024.0 / 1024.0, 1)
     total = round(memory.total / 1024.0 / 1024.0, 1)
     memory = (
-        str(available)
-        + "MB free / "
-        + str(total)
-        + "MB total ( "
-        + str(memory.percent)
-        + "% )"
+            str(available)
+            + "MB free / "
+            + str(total)
+            + "MB total ( "
+            + str(memory.percent)
+            + "% )"
     )
 
     # disk
@@ -444,12 +458,12 @@ def info():
     free = round(disk.free / 1024.0 / 1024.0 / 1024.0, 1)
     total = round(disk.total / 1024.0 / 1024.0 / 1024.0, 1)
     disk = (
-        str(free)
-        + "GB free / "
-        + str(total)
-        + "GB total ( "
-        + str(disk.percent)
-        + "% )"
+            str(free)
+            + "GB free / "
+            + str(total)
+            + "GB total ( "
+            + str(disk.percent)
+            + "% )"
     )
 
     # youtube-dl
@@ -469,7 +483,7 @@ def info():
         is_pi=is_pi,
         pikaraoke_version=VERSION,
         admin=is_admin(),
-        admin_enabled=admin_password != None
+        admin_enabled=admin_password is not None
     )
 
 
@@ -491,37 +505,41 @@ def delayed_halt(cmd):
         process.wait()
         os.system("reboot")
 
+
 def update_youtube_dl():
     time.sleep(3)
     k.upgrade_youtubedl()
 
+
 @app.route("/update_ytdl")
 def update_ytdl():
-    if (is_admin()):
+    if is_admin():
         flash(
             "Updating youtube-dl! Should take a minute or two... ",
             "is-warning",
         )
-        th = threading.Thread(target=update_youtube_dl)
-        th.start()
+        _th = threading.Thread(target=update_youtube_dl)
+        _th.start()
     else:
         flash("You don't have permission to update youtube-dl", "is-danger")
     return redirect(url_for("home"))
 
+
 @app.route("/refresh")
 def refresh():
-    if (is_admin()):
+    if is_admin():
         k.get_available_songs()
     else:
         flash("You don't have permission to shut down", "is-danger")
     return redirect(url_for("browse"))
 
+
 @app.route("/quit")
-def quit():
-    if (is_admin()):
+def quit_pikaraoke():
+    if is_admin():
         flash("Quitting pikaraoke now!", "is-warning")
-        th = threading.Thread(target=delayed_halt, args=[0])
-        th.start()
+        _th = threading.Thread(target=delayed_halt, args=[0])
+        _th.start()
     else:
         flash("You don't have permission to quit", "is-danger")
     return redirect(url_for("home"))
@@ -529,10 +547,10 @@ def quit():
 
 @app.route("/shutdown")
 def shutdown():
-    if (is_admin()): 
+    if is_admin():
         flash("Shutting down system now!", "is-danger")
-        th = threading.Thread(target=delayed_halt, args=[1])
-        th.start()
+        _th = threading.Thread(target=delayed_halt, args=[1])
+        _th.start()
     else:
         flash("You don't have permission to shut down", "is-danger")
     return redirect(url_for("home"))
@@ -540,10 +558,10 @@ def shutdown():
 
 @app.route("/reboot")
 def reboot():
-    if (is_admin()): 
+    if is_admin():
         flash("Rebooting system now!", "is-danger")
-        th = threading.Thread(target=delayed_halt, args=[2])
-        th.start()
+        _th = threading.Thread(target=delayed_halt, args=[2])
+        _th.start()
     else:
         flash("You don't have permission to Reboot", "is-danger")
     return redirect(url_for("home"))
@@ -553,8 +571,9 @@ def switch_folder(foldername):
     download_path = k.download_path
     base_path = os.path.dirname(download_path.rstrip('/'))
     t_name = os.path.basename(foldername.strip('/'))
-    target = os.path.join(base_path, t_name)
+    target = os.path.join(base_path, t_name, '')
     logging.info("target: {}".format(target))
+    flash("new song directory: {}".format(target))
     if os.path.exists(target):
         k.download_path = target
         k.get_available_songs()
@@ -580,11 +599,11 @@ def switch_message():
 
 @app.route("/expand_fs")
 def expand_fs():
-    if (is_admin() and platform == "raspberry_pi"): 
+    if is_admin() and platform == "raspberry_pi":
         flash("Expanding filesystem and rebooting system now!", "is-danger")
-        th = threading.Thread(target=delayed_halt, args=[3])
-        th.start()
-    elif (platform != "raspberry_pi"):
+        _th = threading.Thread(target=delayed_halt, args=[3])
+        _th.start()
+    elif platform != "raspberry_pi":
         flash("Cannot expand fs on non-raspberry pi devices!", "is-danger")
     else:
         flash("You don't have permission to resize the filesystem", "is-danger")
@@ -594,8 +613,9 @@ def expand_fs():
 # Handle sigterm, apparently cherrypy won't shut down without explicit handling
 signal.signal(signal.SIGTERM, lambda signum, stack_frame: k.stop())
 
-def get_default_youtube_dl_path(platform):
-    if platform == "windows":
+
+def get_default_youtube_dl_path(_platform):
+    if _platform == "windows":
         choco_ytdl_path = r"C:\ProgramData\chocolatey\bin\youtube-dl.exe"
         scoop_ytdl_path = os.path.expanduser(r"~\scoop\shims\youtube-dl.exe")
         if os.path.isfile(choco_ytdl_path):
@@ -606,15 +626,16 @@ def get_default_youtube_dl_path(platform):
     else:
         return "/usr/local/bin/youtube-dl"
 
-def get_default_dl_dir(platform):
-    if platform == "raspberry_pi":
+
+def get_default_dl_dir(_platform):
+    if _platform == "raspberry_pi":
         return "/usr/lib/pikaraoke/songs"
-    elif platform == "windows":
-        legacy_directory = os.path.expanduser("~\pikaraoke\songs")
+    elif _platform == "windows":
+        legacy_directory = os.path.expanduser("~\\pikaraoke\\songs")
         if os.path.exists(legacy_directory):
             return legacy_directory
         else:
-            return "~\pikaraoke-songs"
+            return "~\\pikaraoke-songs"
     else:
         legacy_directory = "~/pikaraoke/songs"
         if os.path.exists(legacy_directory):
@@ -659,7 +680,7 @@ if __name__ == "__main__":
         "-o",
         "--omxplayer-path",
         help="Path of omxplayer. Only important to raspberry pi hardware. (default: %s)"
-        % default_omxplayer_path,
+             % default_omxplayer_path,
         default=default_omxplayer_path,
         required=False,
     )
@@ -673,8 +694,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "-v",
         "--volume",
-        help="If using omxplayer, the initial player volume is specified in millibels. Negative values ok. (default: %s , Note: 100 millibels = 1 decibel)."
-        % default_volume,
+        help="If using omxplayer, the initial player volume is specified in millibels. "
+             "Negative values ok. (default: %s , Note: 100 millibels = 1 decibel)."
+             % default_volume,
         default=default_volume,
         required=False,
     )
@@ -682,7 +704,7 @@ if __name__ == "__main__":
         "-s",
         "--splash-delay",
         help="Delay during splash screen between songs (in secs). (default: %s )"
-        % default_splash_delay,
+             % default_splash_delay,
         default=default_splash_delay,
         required=False,
     )
@@ -690,7 +712,7 @@ if __name__ == "__main__":
         "-l",
         "--log-level",
         help="Logging level int value (DEBUG: 10, INFO: 20, WARNING: 30, ERROR: 40, CRITICAL: 50). (default: %s )"
-        % default_log_level,
+             % default_log_level,
         default=default_log_level,
         required=False,
     )
@@ -714,8 +736,11 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--adev",
-        help="Pass the audio output device argument to omxplayer. Possible values: hdmi/local/both/alsa[:device]. If you are using a rpi USB soundcard or Hifi audio hat, try: 'alsa:hw:0,0' Default: '%s'"
-        % default_adev,
+        help="Pass the audio output device argument to omxplayer. "
+             "Possible values: hdmi/local/both/alsa[:device]. "
+             "If you are using a rpi USB soundcard or Hifi audio hat, "
+             "try: 'alsa:hw:0,0' Default: '%s'"
+             % default_adev,
         default=default_adev,
         required=False,
     )
@@ -728,19 +753,26 @@ if __name__ == "__main__":
     parser.add_argument(
         "--high-quality",
         action="store_true",
-        help="Download higher quality video. Note: requires ffmpeg and may cause CPU, download speed, and other performance issues",
+        help="Download higher quality video. Note: requires ffmpeg and may cause CPU, "
+             "download speed, and other performance issues",
         required=False,
     )
     parser.add_argument(
         "--use-omxplayer",
         action="store_true",
-        help="Use OMX Player to play video instead of the default VLC Player. This may be better-performing on older raspberry pi devices. Certain features like key change and cdg support wont be available. Note: if you want to play audio to the headphone jack on a rpi, you'll need to configure this in raspi-config: 'Advanced Options > Audio > Force 3.5mm (headphone)'",
+        help="Use OMX Player to play video instead of the default VLC Player. "
+             "This may be better-performing on older raspberry pi devices. "
+             "Certain features like key change and cdg support wont be available. "
+             "Note: if you want to play audio to the headphone jack on a rpi, you'll "
+             "need to configure this in raspi-config: 'Advanced Options > Audio > Force 3.5mm "
+             "(headphone)'",
         required=False,
     ),
     parser.add_argument(
         "--use-vlc",
         action="store_true",
-        help="Use VLC Player to play video. Enabled by default. Note: if you want to play audio to the headphone jack on a rpi, see troubleshooting steps in README.md",
+        help="Use VLC Player to play video. Enabled by default. Note: if you want to "
+             "play audio to the headphone jack on a rpi, see troubleshooting steps in README.md",
         required=False,
     ),
     parser.add_argument(
@@ -757,7 +789,8 @@ if __name__ == "__main__":
     ),
     parser.add_argument(
         "--logo-path",
-        help="Path to a custom logo image file for the splash screen. Recommended dimensions ~ 500x500px",
+        help="Path to a custom logo image file for the splash screen. "
+             "Recommended dimensions ~ 500x500px",
         default=None,
         required=False,
     ),
@@ -769,19 +802,24 @@ if __name__ == "__main__":
     ),
     parser.add_argument(
         "--admin-password",
-        help="Administrator password, for locking down certain features of the web UI such as queue editing, player controls, song editing, and system shutdown. If unspecified, everyone is an admin.",
+        help="Administrator password, for locking down certain features of the "
+             "web UI such as queue editing, player controls, song editing, and "
+             "system shutdown. If unspecified, everyone is an admin.",
         default=None,
         required=False,
     ),
     parser.add_argument(
         "--developer-mode",
-        help="Run in flask developer mode. Only useful for tweaking the web UI in real time. Will disable the splash screen due to pygame main thread conflicts and may require FLASK_ENV=development env variable for full dev mode features.",
+        help="Run in flask developer mode. Only useful for tweaking the web UI "
+             "in real time. Will disable the splash screen due to pygame main "
+             "thread conflicts and may require FLASK_ENV=development env variable "
+             "for full dev mode features.",
         action="store_true",
         required=False,
     ),
     args = parser.parse_args()
 
-    if (args.admin_password):
+    if args.admin_password:
         admin_password = args.admin_password
 
     app.jinja_env.globals.update(filename_from_path=filename_from_path)
@@ -801,9 +839,9 @@ if __name__ == "__main__":
         print("VLC path not found! " + args.vlc_path)
         sys.exit(1)
     if (
-        platform == "raspberry_pi"
-        and not args.use_vlc
-        and not os.path.isfile(args.omxplayer_path)
+            platform == "raspberry_pi"
+            and not args.use_vlc
+            and not os.path.isfile(args.omxplayer_path)
     ):
         print("omxplayer path not found! " + args.omxplayer_path)
         sys.exit(1)
@@ -816,12 +854,13 @@ if __name__ == "__main__":
         print("Creating download path: " + dl_path)
         os.makedirs(dl_path)
 
-    if (args.developer_mode):
+    if args.developer_mode:
         logging.warning("Splash screen is disabled in developer mode due to main thread conflicts")
         args.hide_splash_screen = True
 
     # Configure karaoke process
     global k
+    # noinspection PyRedeclaration
     k = karaoke.Karaoke(
         port=args.port,
         download_path=dl_path,
@@ -844,7 +883,7 @@ if __name__ == "__main__":
         show_overlay=args.show_overlay
     )
 
-    if (args.developer_mode):
+    if args.developer_mode:
         th = threading.Thread(target=k.run)
         th.start()
         app.run(debug=True, host="0.0.0.0", port=args.port)

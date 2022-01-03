@@ -1,14 +1,14 @@
-import glob
+# import glob
 import json
 import logging
 import os
 import random
 import socket
 import subprocess
-import sys
-import threading
+# import sys
+# import threading
 import time
-from io import BytesIO
+# from io import BytesIO
 from subprocess import check_output
 from pathlib import Path
 
@@ -24,7 +24,6 @@ if get_platform() != "windows":
 
 
 class Karaoke:
-
     raspi_wifi_config_ip = "10.0.0.1"
     raspi_wifi_conf_file = "/etc/raspiwifi/raspiwifi.conf"
     raspi_wifi_config_installed = os.path.exists(raspi_wifi_conf_file)
@@ -44,26 +43,26 @@ class Karaoke:
     default_logo_path = os.path.join(base_path, "logo.png")
 
     def __init__(
-        self,
-        port=5000,
-        download_path="/usr/lib/pikaraoke/songs",
-        hide_ip=False,
-        hide_raspiwifi_instructions=False,
-        hide_splash_screen=False,
-        omxplayer_adev="both",
-        dual_screen=False,
-        high_quality=False,
-        volume=0,
-        log_level=logging.DEBUG,
-        splash_delay=2,
-        youtubedl_path="/usr/local/bin/youtube-dl",
-        omxplayer_path=None,
-        use_omxplayer=False,
-        use_vlc=True,
-        vlc_path=None,
-        vlc_port=None,
-        logo_path=None,
-        show_overlay=False
+            self,
+            port=5000,
+            download_path="/usr/lib/pikaraoke/songs",
+            hide_ip=False,
+            hide_raspiwifi_instructions=False,
+            hide_splash_screen=False,
+            omxplayer_adev="both",
+            dual_screen=False,
+            high_quality=False,
+            volume=0,
+            log_level=logging.DEBUG,
+            splash_delay=2,
+            youtubedl_path="/usr/local/bin/youtube-dl",
+            omxplayer_path=None,
+            use_omxplayer=False,
+            use_vlc=True,
+            vlc_path=None,
+            vlc_port=None,
+            logo_path=None,
+            show_overlay=False
     ):
 
         # override with supplied constructor args if provided
@@ -83,7 +82,7 @@ class Karaoke:
         self.use_vlc = use_vlc
         self.vlc_path = vlc_path
         self.vlc_port = vlc_port
-        self.logo_path = self.default_logo_path if logo_path == None else logo_path
+        self.logo_path = self.default_logo_path if logo_path is None else logo_path
         self.show_overlay = show_overlay
 
         # other initializations
@@ -91,6 +90,12 @@ class Karaoke:
         self.vlcclient = None
         self.omxclient = None
         self.screen = None
+        self.youtubedl_version = None
+        self.full_screen = None
+        self.font = None
+        self.width = None
+        self.height = None
+        self.running = None
 
         logging.basicConfig(
             format="[%(asctime)s] %(levelname)s: %(message)s",
@@ -160,6 +165,7 @@ class Karaoke:
 
         logging.debug("IP address (for QR code and splash screen): " + self.ip)
 
+        # noinspection HttpUrlsUsage
         self.url = "http://%s:%s" % (self.ip, self.port)
 
         # get songs from download_path
@@ -172,22 +178,26 @@ class Karaoke:
 
         self.generate_qr_code()
         if self.use_vlc:
-            if (self.show_overlay):
-                self.vlcclient = vlcclient.VLCClient(port=self.vlc_port, path=self.vlc_path, qrcode=self.qr_code_path, url=self.url)
-            else: 
+            if self.show_overlay:
+                self.vlcclient = vlcclient.VLCClient(
+                    port=self.vlc_port, path=self.vlc_path, qrcode=self.qr_code_path, url=self.url)
+            else:
                 self.vlcclient = vlcclient.VLCClient(port=self.vlc_port, path=self.vlc_path)
         else:
-            self.omxclient = omxclient.OMXClient(path=self.omxplayer_path, adev=self.omxplayer_adev, dual_screen=self.dual_screen, volume_offset=self.volume_offset)
+            self.omxclient = omxclient.OMXClient(
+                path=self.omxplayer_path, adev=self.omxplayer_adev, dual_screen=self.dual_screen,
+                volume_offset=self.volume_offset)
 
         if not self.hide_splash_screen:
             self.initialize_screen()
             self.render_splash_screen()
 
- 
     # Other ip-getting methods are unreliable and sometimes return 127.0.0.1
     # https://stackoverflow.com/a/28950776
-    def get_ip(self):
+    @staticmethod
+    def get_ip():
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # noinspection PyBroadException
         try:
             # doesn't even have to be reachable
             s.connect(("10.255.255.255", 1))
@@ -201,7 +211,7 @@ class Karaoke:
     def get_raspi_wifi_conf_vals(self):
         """Extract values from the RaspiWiFi configuration file."""
         f = open(self.raspi_wifi_conf_file, "r")
-        
+
         # Define default values.
         #
         # References: 
@@ -211,7 +221,7 @@ class Karaoke:
         server_port = "80"
         ssid_prefix = "RaspiWiFi Setup"
         ssl_enabled = "0"
-        
+
         # Override the default values according to the configuration file.
         for line in f.readlines():
             if "server_port=" in line:
@@ -221,7 +231,7 @@ class Karaoke:
             elif "ssl_enabled=" in line:
                 ssl_enabled = line.split("d=")[1].strip()
 
-        return (server_port, ssid_prefix, ssl_enabled)
+        return server_port, ssid_prefix, ssl_enabled
 
     def get_youtubedl_version(self):
         self.youtubedl_version = (
@@ -298,10 +308,12 @@ class Karaoke:
             else:
                 # this section is an unbelievable nasty hack - for some reason Pygame
                 # needs a keyboardinterrupt to initialise in some limited circumstances
-                # source: https://stackoverflow.com/questions/17035699/pygame-requires-keyboard-interrupt-to-init-display
+                # source:
+                # https://stackoverflow.com/questions/17035699/pygame-requires-keyboard-interrupt-to-init-display
                 class Alarm(Exception):
                     pass
 
+                # noinspection PyUnusedLocal
                 def alarm_handler(signum, frame):
                     raise Alarm
 
@@ -355,7 +367,8 @@ class Karaoke:
                     self.screen.blit(text, (p_image.get_width() + 35, blitY))
                     time.sleep(10)
                     logging.info(
-                        "No IP found. Network/Wifi configuration required. For wifi config, try: sudo raspi-config or the desktop GUI: startx"
+                        "No IP found. Network/Wifi configuration required. For wifi config, "
+                        "try: sudo raspi-config or the desktop GUI: startx"
                     )
                     self.stop()
                 else:
@@ -365,8 +378,8 @@ class Karaoke:
                     self.screen.blit(text, (p_image.get_width() + 35, blitY))
 
             if not self.hide_raspiwifi_instructions and (
-                self.raspi_wifi_config_installed
-                and self.raspi_wifi_config_ip in self.url
+                    self.raspi_wifi_config_installed
+                    and self.raspi_wifi_config_ip in self.url
             ):
                 (server_port, ssid_prefix, ssl_enabled) = self.get_raspi_wifi_conf_vals()
 
@@ -380,8 +393,8 @@ class Karaoke:
                 )
                 text3 = self.font.render(
                     "Then point its browser to: '%s://%s%s' and follow the instructions."
-                    % ("https" if ssl_enabled == "1" else "http", 
-                       self.raspi_wifi_config_ip, 
+                    % ("https" if ssl_enabled == "1" else "http",
+                       self.raspi_wifi_config_ip,
                        ":%s" % server_port if server_port != "80" else ""),
                     True,
                     (255, 255, 255),
@@ -397,14 +410,14 @@ class Karaoke:
                 logging.debug("Rendering next song to splash screen")
                 next_song = self.queue[0]["title"]
                 max_length = 60
-                if (len(next_song) > max_length):
+                if len(next_song) > max_length:
                     next_song = next_song[0:max_length] + "..."
                 next_user = self.queue[0]["user"]
                 font_next_song = pygame.font.SysFont(pygame.font.get_default_font(), 60)
                 text = font_next_song.render(
                     "Up next: %s" % (unidecode(next_song)), True, (0, 128, 0)
                 )
-                up_next = font_next_song.render("Up next:  " , True, (255, 255, 0))
+                up_next = font_next_song.render("Up next:  ", True, (255, 255, 0))
                 font_user_name = pygame.font.SysFont(pygame.font.get_default_font(), 50)
                 user_name = font_user_name.render("Added by: %s " % next_user, True, (255, 120, 0))
                 x = self.width - text.get_width() - 10
@@ -417,10 +430,10 @@ class Karaoke:
                 logging.debug("Could not render next song to splash. No song in queue")
                 return False
 
-    def get_search_results(self, textToSearch):
-        logging.info("Searching YouTube for: " + textToSearch)
+    def get_search_results(self, text_to_search):
+        logging.info("Searching YouTube for: " + text_to_search)
         num_results = 10
-        yt_search = 'ytsearch%d:"%s"' % (num_results, unidecode(textToSearch))
+        yt_search = 'ytsearch%d:"%s"' % (num_results, unidecode(text_to_search))
         cmd = [self.youtubedl_path, "-j", "--no-playlist", "--flat-playlist", yt_search]
         logging.debug("Youtube-dl search command: " + " ".join(cmd))
         try:
@@ -431,7 +444,7 @@ class Karaoke:
             for each in output.split("\n"):
                 if len(each) > 2:
                     j = json.loads(each)
-                    if (not "title" in j) or (not "url" in j):
+                    if ("title" not in j) or ("url" not in j):
                         continue
                     rc.append([j["title"], video_url_base + j["url"], j["id"]])
             return rc
@@ -439,8 +452,8 @@ class Karaoke:
             logging.debug("Error while executing search: " + str(e))
             raise e
 
-    def get_karaoke_search_results(self, songTitle):
-        return self.get_search_results(songTitle + " karaoke")
+    def get_karaoke_search_results(self, song_title):
+        return self.get_search_results(song_title + " karaoke")
 
     def download_video(self, video_url, enqueue=False, user="Pikaraoke"):
         logging.info("Downloading video: " + video_url)
@@ -474,7 +487,7 @@ class Karaoke:
         logging.info("Fetching available songs in: " + self.download_path)
         types = ['.mp4', '.mp3', '.zip', '.mkv', '.avi', '.webm', '.mov']
         files_grabbed = []
-        P=Path(self.download_path)
+        P = Path(self.download_path)
         for file in P.rglob('*.*'):
             base, ext = os.path.splitext(file.as_posix())
             if ext.lower() in types:
@@ -489,10 +502,10 @@ class Karaoke:
         os.remove(song_path)
         ext = os.path.splitext(song_path)
         # if we have an associated cdg file, delete that too
-        cdg_file = song_path.replace(ext[1],".cdg")
-        if (os.path.exists(cdg_file)):
+        cdg_file = song_path.replace(ext[1], ".cdg")
+        if os.path.exists(cdg_file):
             os.remove(cdg_file)
-        
+
         self.get_available_songs()
 
     def rename(self, song_path, new_name):
@@ -500,14 +513,17 @@ class Karaoke:
         ext = os.path.splitext(song_path)
         if len(ext) == 2:
             new_file_name = new_name + ext[1]
+        else:
+            new_file_name = new_name
         os.rename(song_path, self.download_path + new_file_name)
         # if we have an associated cdg file, rename that too
-        cdg_file = song_path.replace(ext[1],".cdg")
-        if (os.path.exists(cdg_file)):
+        cdg_file = song_path.replace(ext[1], ".cdg")
+        if os.path.exists(cdg_file):
             os.rename(cdg_file, self.download_path + new_name + ".cdg")
         self.get_available_songs()
 
-    def filename_from_path(self, file_path):
+    @staticmethod
+    def filename_from_path(file_path):
         rc = os.path.basename(file_path)
         rc = os.path.splitext(rc)[0]
         rc = rc.split("---")[0]  # removes youtube id if present
@@ -520,7 +536,8 @@ class Karaoke:
         logging.error("No available song found with youtube id: " + youtube_id)
         return None
 
-    def get_youtube_id_from_url(self, url):
+    @staticmethod
+    def get_youtube_id_from_url(url):
         s = url.split("watch?v=")
         if len(s) == 2:
             return s[1]
@@ -531,13 +548,14 @@ class Karaoke:
     def kill_player(self):
         if self.use_vlc:
             logging.debug("Killing old VLC processes")
-            if self.vlcclient != None:
+            if self.vlcclient is not None:
                 self.vlcclient.kill()
         else:
-            if self.omxclient != None:
+            if self.omxclient is not None:
                 self.omxclient.kill()
 
     def play_file(self, file_path, semitones=0):
+
         self.now_playing = self.filename_from_path(file_path)
         self.now_playing_filename = file_path
 
@@ -564,13 +582,13 @@ class Karaoke:
 
     def is_file_playing(self):
         if self.use_vlc:
-            if self.vlcclient != None and self.vlcclient.is_running():
+            if self.vlcclient is not None and self.vlcclient.is_running():
                 return True
             else:
                 self.now_playing = None
                 return False
         else:
-            if self.omxclient != None and self.omxclient.is_running():
+            if self.omxclient is not None and self.omxclient.is_running():
                 return True
             else:
                 self.now_playing = None
@@ -583,8 +601,8 @@ class Karaoke:
         return False
 
     def enqueue(self, song_path, user="Pikaraoke"):
-        if (self.is_song_in_queue(song_path)):
-            logging.warn("Song is already in queue, will not add: " + song_path)   
+        if self.is_song_in_queue(song_path):
+            logging.warning("Song is already in queue, will not add: " + song_path)
             return False
         else:
             logging.info("'%s' is adding song to queue: %s" % (user, song_path))
@@ -595,26 +613,26 @@ class Karaoke:
         logging.info("Adding %d random songs to queue" % amount)
         songs = list(self.available_songs)  # make a copy
         if len(songs) == 0:
-            logging.warn("No available songs!")
+            logging.warning("No available songs!")
             return False
         i = 0
         while i < amount:
             r = random.randint(0, len(songs) - 1)
             if self.is_song_in_queue(songs[r]):
-                logging.warn("Song already in queue, trying another... " + songs[r])
+                logging.warning("Song already in queue, trying another... " + songs[r])
             else:
                 self.queue.append({"user": "Randomizer", "file": songs[r], "title": self.filename_from_path(songs[r])})
                 i += 1
             songs.pop(r)
             if len(songs) == 0:
-                logging.warn("Ran out of songs!")
+                logging.warning("Ran out of songs!")
                 return False
         return True
 
     def queue_all_songs(self):
         logging.info("Adding all songs to queue")
         for song in self.available_songs:
-            self.queue.append({"user": "the-messenger", "file": song, "title": self.filename_from_path(song)}) 	
+            self.queue.append({"user": "the-messenger", "file": song, "title": self.filename_from_path(song)})
         return True
 
     def queue_clear(self):
@@ -631,12 +649,12 @@ class Karaoke:
                 break
             else:
                 index += 1
-        if song == None:
-            logging.error("Song not found in queue: " + song["file"])
+        if song is None:
+            logging.error("Song not found in queue: " + song_name)
             return False
         if action == "up":
             if index < 1:
-                logging.warn("Song is up next, can't bump up in queue: " + song["file"])
+                logging.warning("Song is up next, can't bump up in queue: " + song["file"])
                 return False
             else:
                 logging.info("Bumping song up in queue: " + song["file"])
@@ -645,7 +663,7 @@ class Karaoke:
                 return True
         elif action == "down":
             if index == len(self.queue) - 1:
-                logging.warn(
+                logging.warning(
                     "Song is already last, can't bump down in queue: " + song["file"]
                 )
                 return False
@@ -737,11 +755,11 @@ class Karaoke:
         else:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    logging.warn("Window closed: Exiting pikaraoke...")
+                    logging.warning("Window closed: Exiting pikaraoke...")
                     self.running = False
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        logging.warn("ESC pressed: Exiting pikaraoke...")
+                        logging.warning("ESC pressed: Exiting pikaraoke...")
                         self.running = False
                     if event.key == pygame.K_f:
                         self.toggle_full_screen()
@@ -771,7 +789,7 @@ class Karaoke:
         self.running = True
         while self.running:
             try:
-                if not self.is_file_playing() and self.now_playing != None:
+                if not self.is_file_playing() and self.now_playing is not None:
                     self.reset_now_playing()
                 if len(self.queue) > 0:
                     if not self.is_file_playing():
@@ -784,11 +802,11 @@ class Karaoke:
                             self.handle_run_loop()
                             i += self.loop_interval
                         self.play_file(self.queue[0]["file"])
-                        self.now_playing_user=self.queue[0]["user"]
+                        self.now_playing_user = self.queue[0]["user"]
                         self.queue.pop(0)
                 elif not pygame.display.get_active() and not self.is_file_playing():
                     self.pygame_reset_screen()
                 self.handle_run_loop()
             except KeyboardInterrupt:
-                logging.warn("Keyboard interrupt: Exiting pikaraoke...")
+                logging.warning("Keyboard interrupt: Exiting pikaraoke...")
                 self.running = False
