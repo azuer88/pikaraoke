@@ -3,7 +3,7 @@ set -x
 set -e
 # exec startx &
 # sleep 3
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 source .venv/bin/activate
 source scripts/check_wifi.sh
 
