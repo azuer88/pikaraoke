@@ -50,6 +50,7 @@ site_name = "PiKaraoke"
 admin_password = None
 raspberry_pi = is_raspberry_pi()
 linux = get_platform() == "linux"
+background = "black"
 
 WIFI_IMAGE = "/home/default/wifi.png"
 
@@ -557,7 +558,8 @@ def splash():
         wifi_image=wifi_image,
         hide_url=k.hide_url,
         hide_overlay=k.hide_overlay,
-        screensaver_timeout=k.screensaver_timeout
+        screensaver_timeout=k.screensaver_timeout,
+        background_color=background,
     )
 
 
@@ -628,13 +630,13 @@ def delayed_halt(cmd):
     if cmd == 0:
         sys.exit()
     if cmd == 1:
-        os.system("shutdown now")
+        os.system("sudo shutdown now")
     if cmd == 2:
-        os.system("reboot")
+        os.system("sudo reboot")
     if cmd == 3:
         process = subprocess.Popen(["raspi-config", "--expand-rootfs"])
         process.wait()
-        os.system("reboot")
+        os.system("sudo reboot")
 
 
 def update_youtube_dl():
@@ -925,36 +927,43 @@ if __name__ == "__main__":
         help="Path to a custom logo image file for the splash screen. Recommended dimensions ~ 2048x1024px",
         default=None,
         required=False,
-    ),
+    )
     parser.add_argument(
         "-u",
         "--url",
         help="Override the displayed IP address with a supplied URL. This argument should include port, if necessary",
         default=None,
         required=False,
-    ),
+    )
     parser.add_argument(
         "-m",
         "--ffmpeg-url",
         help="Override the ffmpeg address with a supplied URL.",
         default=None,
         required=False,
-    ),
+    )
     parser.add_argument(
         "--hide-overlay",
         action="store_true",
         help="Hide overlay that shows on top of video with pikaraoke QR code and IP",
         required=False,
-    ),
+    )
     parser.add_argument(
         "--admin-password",
         help="Administrator password, for locking down certain features of the web UI such as queue editing, player "
              "controls, song editing, and system shutdown. If unspecified, everyone is an admin.",
         default=None,
         required=False,
-    ),
+    )
+    parser.add_argument(
+        "--background",
+        default=background,
+        help=f"Set the background color of the splash screen. Default is {background}.",
+    )
 
     args = parser.parse_args()
+
+    background = args.background
 
     if args.admin_password:
         admin_password = args.admin_password
