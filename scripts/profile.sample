@@ -1,0 +1,10 @@
+#!/bin/bash
+# sample $HOME/.profile (add to end)
+
+TTY=`/usr/bin/tty | sed -e "s:/dev/::"`
+if [ "$TTY" == "tty1" ]; then
+   # exec $HOME/pikaraoke/start
+   exec startx &
+fi
+
+

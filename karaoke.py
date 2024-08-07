@@ -1,3 +1,5 @@
+#!/bin/env python3
+
 import contextlib
 import json
 import logging
@@ -671,7 +673,8 @@ class Karaoke:
                         while i < (self.splash_delay * 1000):
                             self.handle_run_loop()
                             i += self.loop_interval
-                        self.play_file(self.queue[0]["file"], self.queue[0]["semitones"])
+                        if self.queue:
+                            self.play_file(self.queue[0]["file"], self.queue[0]["semitones"])
                 self.log_ffmpeg_output()
                 self.handle_run_loop()
             except KeyboardInterrupt:

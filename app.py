@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import datetime
 import hashlib
@@ -634,6 +636,33 @@ def reboot():
         flash("You don't have permission to Reboot", "is-danger")
     return redirect(url_for("home"))
 
+def set_resolution(resolution):
+    with open('resolution', mode="w") as f:
+        f.write(resolution)
+
+@app.route("/4kres")
+def switch_4k():
+    if is_admin():
+        resolution="3840,2160"
+        set_resolution(resolution)
+        flash("Resolution set to 4K, reboot to apply.", "is-danger")
+    else:
+        flash("You don't have permission to change resolution", "is-danger")
+
+    return redirect(url_for("info"))
+
+
+@app.route("/2kres")
+def switch_1k():
+    if is_admin():
+        resolution="1920,1080"
+        set_resolution(resolution)
+        flash("Resolution set to 1K, reboot to apply.", "is-danger")
+    else:
+        flash("You don't have permission to change resolution", "is-danger")
+    return redirect(url_for("info"))
+
+
 @app.route("/expand_fs")
 def expand_fs():
     if (is_admin() and raspberry_pi): 
@@ -645,6 +674,40 @@ def expand_fs():
     else:
         flash("You don't have permission to resize the filesystem", "is-danger")
     return redirect(url_for("home"))
+
+def switch_folder(foldername):
+    if is_admin():
+        download_path = k.download_path
+        base_path = os.path.dirname(download_path.rstrip('/'))
+        t_name = os.path.basename(foldername.strip('/'))
+        target = os.path.join(base_path, t_name, '')
+        logging.info("target: {}".format(target))
+        flash("new song directory: {}".format(target))
+        if os.path.exists(target):
+            k.download_path = target
+            k.get_available_songs()
+        else:
+            flash("'{}' does not exist, can not switch", "is-warning")
+    else:
+        flash("You don't have permission to change folders", "is-danger")
+
+
+@app.route("/switch_songs")
+def switch_songs():
+    switch_folder('songs')
+    return redirect(url_for("queue"))
+
+
+@app.route("/switch_messages")
+def switch_messages():
+    switch_folder('messages')
+    return redirect(url_for("queue"))
+
+
+@app.route("/switch_to/<foldername>")
+def switch_to_folder(foldername: str):
+    switch_folder(foldername)
+    return redirect(url_for("queue"))
 
 
 # Handle sigterm, apparently cherrypy won't shut down without explicit handling
@@ -658,7 +721,7 @@ def get_default_youtube_dl_path(platform):
 
 def get_default_dl_dir(platform):
     if raspberry_pi:
-        return "~/pikaraoke-songs"
+        return "~/songs"
     elif platform == "windows":
         legacy_directory = os.path.expanduser("~\\pikaraoke\\songs")
         if os.path.exists(legacy_directory):
@@ -670,7 +733,7 @@ def get_default_dl_dir(platform):
         if os.path.exists(legacy_directory):
             return legacy_directory
         else:
-            return "~/pikaraoke-songs"
+            return "~/songs"
 
 
 if __name__ == "__main__":

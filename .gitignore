@@ -1,6 +1,7 @@
 *.pyc
 *.swp
 .vscode/
+.idea/
 .venv/
 __pycache__/
 songs/
