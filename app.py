@@ -50,6 +50,9 @@ admin_password = None
 raspberry_pi = is_raspberry_pi()
 linux = get_platform() == "linux"
 
+WIFI_IMAGE = "/home/default/wifi.png"
+
+
 def filename_from_path(file_path, remove_youtube_id=True):
     rc = os.path.basename(file_path)
     rc = os.path.splitext(rc)[0]
@@ -384,6 +387,11 @@ def download():
 def qrcode():
     return send_file(k.qr_code_path, mimetype="image/png")
 
+@app.route("/wifiqrcode")
+def wifi_qrcode():
+    return send_file(WIFI_IMAGE, mimetype="image/png")
+
+
 @app.route("/logo")
 def logo():
     return send_file(k.logo_path, mimetype="image/png")
@@ -463,6 +471,7 @@ def edit_file():
 
 @app.route("/splash")
 def splash():
+    wifi_image = ""
     # Only do this on Raspberry Pis
     if raspberry_pi:
         status = subprocess.run(['iwconfig', 'wlan0'], stdout=subprocess.PIPE).stdout.decode('utf-8')
@@ -471,22 +480,28 @@ def splash():
             # Wifi is setup as a Access Point
             ap_name = ""
             ap_password = ""
-            
-            if os.path.isfile("/etc/raspiwifi/raspiwifi.conf"):
-                f = open("/etc/raspiwifi/raspiwifi.conf", "r")
-            
-                # Override the default values according to the configuration file.
-                for line in f.readlines():
-                    line = line.split("#", 1)[0]
-                    if "ssid_prefix=" in line:
-                        ap_name = line.split("ssid_prefix=")[1].strip()
-                    elif "wpa_key=" in line:
-                        ap_password = line.split("wpa_key=")[1].strip()
 
-            if len(ap_password) > 0:
-                text = [f"Wifi Network: {ap_name} Password: {ap_password}", f"Configure Wifi: {k.url.rpartition(':')[0]}"]
+            wifi_image = WIFI_IMAGE
+
+            if os.path.isfile(wifi_image):
+                text = ""
             else:
-                text = [f"Wifi Network: {ap_name}", f"Configure Wifi: {k.url.rpartition(':',1)[0]}"]
+                wifi_image = ""
+                if os.path.isfile("/etc/raspiwifi/raspiwifi.conf"):
+                    f = open("/etc/raspiwifi/raspiwifi.conf", "r")
+                
+                    # Override the default values according to the configuration file.
+                    for line in f.readlines():
+                        line = line.split("#", 1)[0]
+                        if "ssid_prefix=" in line:
+                            ap_name = line.split("ssid_prefix=")[1].strip()
+                        elif "wpa_key=" in line:
+                            ap_password = line.split("wpa_key=")[1].strip()
+
+                if len(ap_password) > 0:
+                    text = [f"Wifi Network: {ap_name} Password: {ap_password}", f"Configure Wifi: {k.url.rpartition(':')[0]}"]
+                else:
+                    text = [f"Wifi Network: {ap_name}", f"Configure Wifi: {k.url.rpartition(':')[0]}"]
         else:
             # You are connected to Wifi as a client
             text = ""
@@ -499,6 +514,7 @@ def splash():
         blank_page=True,
         url=k.url,
         hostap_info=text,
+        wifi_image=wifi_image,
         hide_url=k.hide_url,
         hide_overlay=k.hide_overlay,
         screensaver_timeout=k.screensaver_timeout
