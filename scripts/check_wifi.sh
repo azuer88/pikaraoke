@@ -24,7 +24,7 @@ if [ $INTF == "down" ]; then
    echo "Interface is down"
    echo "WIFI:T:WPA;S:$SSID;P:$PASSWD;H:false;;" > $FILENAME
    sudo nmcli device wifi hotspot ssid $SSID password $PASSWD
-   source $HOME/pikaraoke/.venv/bin/activate 
+   source $HOME/pikaraoke/.venv/bin/activate  # make sure to activate the virtual environment
    qr --factory=png --output=$HOME/wifi.png < $FILENAME
 else
    rm -f $HOME/wifi.png
