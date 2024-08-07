@@ -6,6 +6,7 @@ import hashlib
 import json
 import logging
 import os
+import random
 import signal
 import subprocess
 import sys
@@ -548,6 +549,11 @@ def splash():
     else:
         # Not a Raspberry Pi
         text = ""
+    global background
+    if isinstance(background, (tuple, list)):
+        background_color = random.choice(background)
+    else:
+        background_color = background
 
     return render_template(
         "splash.html",
@@ -558,7 +564,7 @@ def splash():
         hide_url=k.hide_url,
         hide_overlay=k.hide_overlay,
         screensaver_timeout=k.screensaver_timeout,
-        background_color=background,
+        background_color=background_color,
     )
 
 
@@ -963,7 +969,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    background = args.background
+    if os.path.isfile(args.background):
+        with open(args.background) as f:
+            background = f.read().strip().splitlines()
+    else:
+        background = args.background
 
     if args.admin_password:
         admin_password = args.admin_password
