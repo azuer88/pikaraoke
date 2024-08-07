@@ -25,6 +25,6 @@ python3 app.py \
     --high-quality \
     --volume 0.55 \
     --logo-path /home/default/logo.png \
-    --admin-password pass.1234
+    --admin-password pass.1234 \
     --background $HOME/backgrounds
 
