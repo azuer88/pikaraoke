@@ -554,7 +554,7 @@ def splash():
         background_color = random.choice(background)
     else:
         background_color = background
-
+    print(f"background_color: {background_color}")
     return render_template(
         "splash.html",
         blank_page=True,
