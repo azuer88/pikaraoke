@@ -21,7 +21,7 @@
     {
       "uid": "c47efa0e3e74f6ba4c2562c1258fff1f",
       "css": "to-end",
-      "code": 59394,
+      "code": 8962,
       "src": "fontawesome"
     },
     {
@@ -33,31 +33,31 @@
     {
       "uid": "fee6e00f36e8ca8ef3e4a62caa213bf6",
       "css": "volume-down",
-      "code": 59396,
+      "code": 128269,
       "src": "fontawesome"
     },
     {
       "uid": "76857a03fbaa6857fe063b6c25aa98ed",
       "css": "volume-up",
-      "code": 59397,
+      "code": 128194,
       "src": "fontawesome"
     },
     {
       "uid": "8ca5f77677a66dbe813213ca75ac1474",
       "css": "mic-1",
-      "code": 59398,
+      "code": 59141,
       "src": "elusive"
     },
     {
       "uid": "4d2f54ceffd4645d3ce6fe82b404190d",
       "css": "mic-circled",
-      "code": 59399,
+      "code": 9881,
       "src": "elusive"
     },
     {
       "uid": "517522647a556192fbc78aa391b7b0c2",
       "css": "cancel-circled-outline",
-      "code": 59400,
+      "code": 9967,
       "src": "typicons"
     },
     {
@@ -81,19 +81,19 @@
     {
       "uid": "d35a1d35efeb784d1dc9ac18b9b6c2b6",
       "css": "pencil",
-      "code": 59404,
+      "code": 8595,
       "src": "fontawesome"
     },
     {
       "uid": "lu2wqmd7v9zp21knhy4eifo41wjp4cnx",
       "css": "th-list",
-      "code": 59405,
+      "code": 8592,
       "src": "typicons"
     },
     {
       "uid": "43855c51ebf847e8d581b794e4126dfe",
       "css": "th-list-outline",
-      "code": 59406,
+      "code": 8594,
       "src": "typicons"
     },
     {
@@ -117,7 +117,7 @@
     {
       "uid": "97bd5542ed3e143d2ee9b60e14487615",
       "css": "list-add",
-      "code": 59408,
+      "code": 8593,
       "src": "entypo"
     },
     {
@@ -281,6 +281,18 @@
       "css": "info",
       "code": 59417,
       "src": "iconic"
+    },
+    {
+      "uid": "81db033e704eb7c586a365559d7c0f36",
+      "css": "file-audio",
+      "code": 61895,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "dd69d9aa589ea7bc0a82a3fe67039f4b",
+      "css": "file-video",
+      "code": 61896,
+      "src": "fontawesome"
     }
   ]
 }

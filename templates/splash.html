@@ -303,7 +303,17 @@
 
 <div id="ap-container">
   <div class="is-size-5 stroke">
-    <div id="hostap">{% for line in hostap_info %}{{ line }}<br />{% endfor %}</div>
+    <div id="hostap">
+        {% for line in hostap_info %}{{ line }}<br />{% endfor %}
+	{% if wifi_image %}
+	<img
+	  src="{{ url_for('wifi_qrcode') }}"
+	  width="100px"
+	  style="image-rendering: pixelated"
+	  alt="qrcode"
+	/>
+	{% endif %}
+    </div>
   </div>
 </div>
 
@@ -456,7 +466,7 @@
     object-fit: contain;
   }
   body {
-    background-color: {{ background_color }};
+	  background-color: {{ background_color }};
   }
   #logo-container {
     display: flex;

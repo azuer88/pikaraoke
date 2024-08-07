@@ -51,7 +51,7 @@ admin_password = None
 raspberry_pi = is_raspberry_pi()
 linux = get_platform() == "linux"
 background = "black"
-
+k = None
 WIFI_IMAGE = "/home/default/wifi.png"
 
 
@@ -69,7 +69,7 @@ def filename_from_path(file_path, remove_youtube_id=True):
 
 
 def arg_path_parse(path):
-    if isinstance(path, list):
+    if isinstance(path, (list, tuple)):
         return " ".join(path)
     else:
         return path
@@ -331,10 +331,10 @@ def autocomplete():
 
 @app.route("/browse", methods=["GET"])
 def browse():
-    search_present = False
+    search_enabled = False
     q = request.args.get('q')
     if q:
-        search_present = True
+        search_enabled = True
     page = request.args.get(get_page_parameter(), type=int, default=1)
 
     available_songs = k.available_songs
@@ -368,11 +368,10 @@ def browse():
         css_framework='bulma',
         page=page,
         total=len(songs),
-        search=search_present,
+        search=search_enabled,
         record_name='songs',
         per_page=results_per_page
     )
-
     start_index = (page - 1) * (results_per_page - 1)
     return render_template(
         "files.html",
@@ -514,8 +513,8 @@ def splash():
     # Only do this on Raspberry Pis
     if raspberry_pi:
         # noinspection PyArgumentEqualDefault
-        status = subprocess.run(['iwconfig', 'wlan0'], stdout=subprocess.PIPE).stdout.decode('utf-8')
-        # text = ""
+        status = subprocess.run(['iwconfig', 'wlan0'],
+                                stdout=subprocess.PIPE).stdout.decode('utf-8')
         if "Mode:Master" in status:
             # Wifi is setup as a Access Point
             ap_name = ""
@@ -896,8 +895,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--prefer-hostname",
         action="store_true",
-        help=f"Use the local hostname instead of the IP as the connection URL. Use at your discretion: "
-             f"mDNS is not guaranteed to work on all LAN configurations. Defaults to {default_prefer_hostname}",
+        help=f"Use the local hostname instead of the IP as the connection URL. Use at your discretion: mDNS is not "
+             f"guaranteed to work on all LAN configurations. Defaults to {default_prefer_hostname}",
         default=default_prefer_hostname,
         required=False,
     )
@@ -950,15 +949,16 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--admin-password",
-        help="Administrator password, for locking down certain features of the web UI such as queue editing, player "
-             "controls, song editing, and system shutdown. If unspecified, everyone is an admin.",
+        help="Administrator password, for locking down certain features of the web UI such as "
+             "queue editing, player controls, song editing, and system shutdown. If unspecified, "
+             "everyone is an admin.",
         default=None,
         required=False,
     )
     parser.add_argument(
         "--background",
         default=background,
-        help=f"Set the background color of the splash screen. Default is {background}.",
+        help=f"Set the background color of the splash screen.  Default is {background}",
     )
 
     args = parser.parse_args()
@@ -991,8 +991,6 @@ if __name__ == "__main__":
         parsed_volume = default_volume
 
     # Configure karaoke process
-    global k
-    # noinspection PyRedeclaration
     k = karaoke.Karaoke(
         port=args.port,
         ffmpeg_port=args.ffmpeg_port,
@@ -1027,8 +1025,8 @@ if __name__ == "__main__":
     )
     cherrypy.engine.start()
 
-    driver = None
     # Start the splash screen using selenium
+    driver = None
     if not args.hide_splash_screen:
         if raspberry_pi:
             service = Service(executable_path='/usr/bin/chromedriver')

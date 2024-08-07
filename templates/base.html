@@ -200,6 +200,16 @@
           {# MSG: Navigation link for the page where the user can add existing songs to the queue. #}
           <span>{% trans %}Browse{% endtrans %}</span>
         </a>
+	{% if admin %}
+	<a id="switch_songs" class="navbar-item" href="{{ url_for('switch_songs') }}">
+          <i class="icon icon-file-audio" title="Songs"></i>
+          <span>{% trans %}Songs{% endtrans %}</span>
+	</a>
+	<a id="switch_messages" class="navbar-item" href="{{ url_for('switch_messages') }}">
+          <i class="icon icon-file-video" title="Messages"></i>
+          <span>{% trans %}Messages{% endtrans %}</span>
+	</a>
+	{% endif %}
         <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
           <span aria-hidden="true"></span>
           <span aria-hidden="true"></span>
