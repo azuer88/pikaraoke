@@ -974,7 +974,7 @@ if __name__ == "__main__":
             background = f.read().strip().splitlines()
     else:
         background = args.background
-    print("global_background {background}")
+    print(f"global_background {background}")
 
     if args.admin_password:
         admin_password = args.admin_password
