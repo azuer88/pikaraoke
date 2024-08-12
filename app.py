@@ -206,7 +206,7 @@ def add_random():
 
 @app.route("/queue/addall", methods=["GET"])
 def add_all_songs():
-    k.queue_add_all()
+    k.queue_all_songs()
     flash("Added all songs to the queue", "is-success")
     return redirect(url_for("queue"))
 
