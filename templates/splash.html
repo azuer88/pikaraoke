@@ -16,9 +16,11 @@
   var mouseTimer = null,
     cursorVisible = true;
 
+  {% if screensaver_timeout > 0 %}
   var screensaverTimeoutMs =
     parseInt("{{ screensaver_timeout }}") * 1000 || 300000;
   let screensaverTimeout;
+  {% endif %}
 
   var isPlaying = false;
   var isPaused = false;
@@ -174,6 +176,7 @@
         }
       }
 
+        {% if screensaver_timeout > 0 %}
       //handle screensaver
       let screensaver = document.getElementById("screensaver");
       if (
@@ -193,6 +196,7 @@
           screensaverTimeout = clearTimeout(screensaverTimeout);
         }
       }
+        {% endif %}
     });
   }
 
