@@ -293,18 +293,6 @@
       "css": "file-video",
       "code": 61896,
       "src": "fontawesome"
-    },
-    {
-      "uid": "8e0220796066428d6ddea96a4f1b5131",
-      "css": "loop",
-      "code": 59418,
-      "src": "entypo"
-    },
-    {
-      "uid": "5386cf333c67332c278b798c9fded7e5",
-      "css": "loop-alt",
-      "code": 59419,
-      "src": "iconic"
     }
   ]
 }

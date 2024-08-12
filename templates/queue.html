@@ -25,6 +25,7 @@
     var html = "";
     if (queue.length > 0) {
       queue.forEach((e, index) => {
+        loop_icon = e.loop ? "icon-loop" : "icon-loop-alt";
         html += `
           <tr value=${e.title}>
             <td width="20px" style="padding: 5px 0px">${index + 1}</td>
@@ -51,6 +52,14 @@
             {% if admin %}
               <td width="20px">
                 <a
+                  class="loop-button"
+                  title="${e.title}"
+                  href="/queue/edit?action=loop&song=${encodeURIComponent(e.file)}"
+                  ><i class="icon ${loop_icon}"></i>
+                </a>
+              </td>
+              <td width="20px">
+                <a
                   class="delete-button confirm-delete has-text-danger"
                   title="${e.title}"
                   href="/queue/edit?action=delete&song=${encodeURIComponent(e.file)}"
@@ -59,7 +68,7 @@
               </td>
             {% endif %}
           </tr>
-        `
+        `;
       });
     }
     else {

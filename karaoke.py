@@ -383,7 +383,7 @@ class Karaoke:
                 output = self.ffmpeg_log.get_nowait() 
                 logging.debug("[FFMPEG] " + decode_ignore(output))
 
-    def play_file(self, file_path, semitones=0):
+    def play_file(self, file_path, semitones=0, loop=False):
         logging.info(f"Playing file: {file_path} transposed {semitones} semitones")
         stream_uid = int(time.time())
         stream_url = f"{self.ffmpeg_url}/{stream_uid}"
@@ -409,7 +409,10 @@ class Karaoke:
         # copy the audio stream if no transposition, otherwise use the aac codec
         is_transposed = semitones != 0
         acodec = "aac" if is_transposed else "copy"
-        input = ffmpeg.input(fr.file_path)
+        if loop:
+            input = ffmpeg.input(fr.file_path, stream_loop=-1)
+        else:
+            input = ffmpeg.input(fr.file_path)
         audio = input.audio.filter("rubberband", pitch=pitch) if is_transposed else input.audio
         # Ffmpeg outputs "Stream #0" when the stream is ready to consume  
         stream_ready_string = "Stream #"
@@ -509,12 +512,13 @@ class Karaoke:
                 return True
         return False
 
-    def enqueue(self, song_path, user="Pikaraoke", semitones=0, add_to_front=False):
+    def enqueue(self, song_path, user="Pikaraoke", semitones=0, add_to_front=False, loop=False):
         if (self.is_song_in_queue(song_path)):
             logging.warn("Song is already in queue, will not add: " + song_path)   
             return False
         else:
-            queue_item = {"user": user, "file": song_path, "title": self.filename_from_path(song_path), "semitones": semitones}
+            queue_item = {"user": user, "file": song_path, "title": self.filename_from_path(song_path),
+                          "semitones": semitones, "loop": loop}
             if add_to_front:
                 logging.info("'%s' is adding song to front of queue: %s" % (user, song_path))
                 self.queue.insert(0, queue_item)
@@ -557,7 +561,7 @@ class Karaoke:
                 break
             else:
                 index += 1
-        if song == None:
+        if song is None:
             logging.error("Song not found in queue: " + song["file"])
             return False
         if action == "up":
@@ -583,6 +587,12 @@ class Karaoke:
         elif action == "delete":
             logging.info("Deleting song from queue: " + song["file"])
             del self.queue[index]
+            return True
+        elif action == "loop":
+            logging.info("Looping song in queue: " + song["file"])
+            itm = self.queue[index]
+            loop = itm.get("loop", False)
+            itm["loop"] = not loop
             return True
         else:
             logging.error("Unrecognized direction: " + action)
@@ -674,7 +684,8 @@ class Karaoke:
                             self.handle_run_loop()
                             i += self.loop_interval
                         if self.queue:
-                            self.play_file(self.queue[0]["file"], self.queue[0]["semitones"])
+                            self.play_file(self.queue[0]["file"], self.queue[0]["semitones"],
+                                           loop=self.queue[0].get("loop", False))
                 self.log_ffmpeg_output()
                 self.handle_run_loop()
             except KeyboardInterrupt:
