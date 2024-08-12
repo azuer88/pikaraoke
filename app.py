@@ -763,6 +763,12 @@ def switch_1k():
     return redirect(url_for("info"))
 
 
+@app.route("/toggle_show_url")
+def toggle_show_url():
+    k.hide_url = not k.hide_url
+    return redirect(url_for("home"))
+
+
 @app.route("/expand_fs")
 def expand_fs():
     if is_admin() and raspberry_pi:
