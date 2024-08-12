@@ -1,5 +1,5 @@
 {% extends 'base.html' %} {% block scripts %}
-{% if screensaver_timeout > 0 %}
+{% if screensaver_enabled %}
 <script src="{{  url_for('static', filename='screensaver.js') }}"></script>
 {% endif %}
 <link
@@ -18,7 +18,7 @@
   var mouseTimer = null,
     cursorVisible = true;
 
-  {% if screensaver_timeout > 0 %}
+  {% if screensaver_enabled %}
   var screensaverTimeoutMs =
     parseInt("{{ screensaver_timeout }}") * 1000 || 300000;
   let screensaverTimeout;
@@ -178,7 +178,7 @@
         }
       }
 
-        {% if screensaver_timeout > 0 %}
+        {% if screensaver_enabled %}
       //handle screensaver
       let screensaver = document.getElementById("screensaver");
       if (
