@@ -322,7 +322,7 @@ class Karaoke:
 
     def get_available_songs(self):
         logging.info("Fetching available songs in: " + self.download_path)
-        types = ['.mp4', '.mp3', '.zip', '.mkv', '.avi', '.webm', '.mov']
+        types = ['.mp4', '.mp3', '.zip', '.mkv', '.avi', '.webm', '.mov', '.m4v']
         files_grabbed = []
         P=Path(self.download_path)
         for file in P.rglob('*.*'):
