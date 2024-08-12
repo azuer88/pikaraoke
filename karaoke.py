@@ -503,6 +503,12 @@ class Karaoke:
         self.enqueue(self.now_playing_filename, self.now_playing_user, semitones, True)
         self.skip()
 
+    def song_is_looped(self, song_path):
+        for entry in self.queue:
+            if entry["file"] == song_path:
+                return entry.get("loop", False)
+        return False
+
     def is_file_playing(self):
         return self.is_playing
 

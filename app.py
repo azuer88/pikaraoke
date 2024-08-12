@@ -232,6 +232,16 @@ def queue_edit():
                 flash("Deleted from queue: " + song, "is-success")
             else:
                 flash("Error deleting from queue: " + song, "is-danger")
+        elif action == "loop":
+            result = k.queue_edit(song, "loop")
+            if result:
+                if k.song_is_looped(song):
+                    flash("Loop play song: " + song, "is-success")
+                else:
+                    flash("Single play song: " + song, "is-success")
+            else:
+                flash("Error deleting from queue: " + song, "is-danger")
+
     return redirect(url_for("queue"))
 
 

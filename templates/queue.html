@@ -26,6 +26,7 @@
     if (queue.length > 0) {
       queue.forEach((e, index) => {
         loop_icon = e.loop ? "icon-loop" : "icon-loop-alt";
+        console.log(e.title, 'loop_icon:', loop_icon)
         html += `
           <tr value=${e.title}>
             <td width="20px" style="padding: 5px 0px">${index + 1}</td>
