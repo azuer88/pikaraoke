@@ -807,7 +807,7 @@ def switch_messages():
 @app.route("/switch_to/<foldername>")
 def switch_to_folder(foldername: str):
     switch_folder(foldername)
-    return redirect(url_for("queue"))
+    return redirect(url_for("browse"))
 
 
 # Handle sigterm, apparently cherrypy won't shut down without explicit handling
