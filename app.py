@@ -204,6 +204,13 @@ def add_random():
     return redirect(url_for("queue"))
 
 
+@app.route("/queue/addall", methods=["GET"])
+def add_all_songs():
+    k.queue_add_all()
+    flash("Added all songs to the queue", "is-success")
+    return redirect(url_for("queue"))
+
+
 @app.route("/queue/edit", methods=["GET"])
 def queue_edit():
     action = request.args["action"]
@@ -272,6 +279,18 @@ def skip():
 def pause():
     k.pause()
     return redirect(url_for("home"))
+
+
+@app.route("/queue/pause")
+def pause_queue():
+    k.pause_queue(True)
+    return redirect(url_for("queue"))
+
+
+@app.route("/queue/resume")
+def resume_queue():
+    k.pause_queue(False)
+    return redirect(url_for("queue"))
 
 
 @app.route("/transpose/<semitones>", methods=["GET"])

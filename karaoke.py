@@ -85,10 +85,12 @@ class Karaoke:
         screensaver_timeout = 300,
         url=None,
         ffmpeg_url=None,
-        prefer_hostname=True
+        prefer_hostname=True,
+        paused_queue=False,
     ):
 
         # override with supplied constructor args if provided
+        self.paused_queue = paused_queue
         self.port = port
         self.ffmpeg_port = ffmpeg_port
         self.hide_url = hide_url
@@ -553,6 +555,12 @@ class Karaoke:
                 return False
         return True
 
+    def queue_all_songs(self):
+        logging.info("Adding all songs to queue")
+        for song in self.available_songs:
+            self.enqueue(song, "Queuer")
+        return True
+
     def queue_clear(self):
         logging.info("Clearing queue!")
         self.queue = []
@@ -622,7 +630,10 @@ class Karaoke:
         else:
             logging.warning("Tried to pause, but no file is playing!")
             return False
-        
+
+    def pause_queue(self, paused):
+        self.paused_queue = paused
+
     def volume_change(self, vol_level):
         self.volume = vol_level
         logging.debug(f"Setting volume to: {self.volume}")
@@ -689,7 +700,7 @@ class Karaoke:
                         while i < (self.splash_delay * 1000):
                             self.handle_run_loop()
                             i += self.loop_interval
-                        if self.queue:
+                        if self.queue and not self.paused_queue:
                             self.play_file(self.queue[0]["file"], self.queue[0]["semitones"],
                                            loop=self.queue[0].get("loop", False))
                 self.log_ffmpeg_output()
