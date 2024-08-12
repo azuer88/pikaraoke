@@ -34,6 +34,8 @@
 .icon-search-3:before { content: '\e817'; } /* '' */
 .icon-info-circled-1:before { content: '\e818'; } /* '' */
 .icon-info:before { content: '\e819'; } /* '' */
+.icon-loop:before { content: '\e81a'; } /* '' */
+.icon-loop-alt:before { content: '\e81b'; } /* '' */
 .icon-left-circled:before { content: '\f0a8'; } /* '' */
 .icon-right-circled:before { content: '\f0a9'; } /* '' */
 .icon-up-circled:before { content: '\f0aa'; } /* '' */
