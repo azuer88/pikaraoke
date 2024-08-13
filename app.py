@@ -330,8 +330,9 @@ def save_playlist():
     return redirect(url_for("queue"))
 
 
-@app.route("/queue/load_playlist/<playlist>")
-def load_playlist(playlist: str):
+@app.route("/queue/load_playlist/<playlist>?")
+def load_playlist(playlist: str = None):
+    print(f"playlist = {playlist}")
     target = Path(k.download_path).parent / "playlists"
     playlist = target / playlist
     if playlist.is_file():
