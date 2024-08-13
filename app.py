@@ -186,7 +186,7 @@ def queue():
         site_title=site_name,
         title="Queue",
         admin=is_admin(),
-        queue__paused=k.is_paused,
+        queue_paused=k.is_paused,
         queue_rotate=k.rotate_songs,
     )
 
@@ -301,13 +301,15 @@ def resume_queue():
 
 @app.route("/queue/rotate_songs")
 def rotate_queue():
-    k.rotate_queue = True
+    k.rotate_songs = True
+    print(f"queue_rotate = {k.rotate_songs}")
     return redirect(url_for("queue"))
 
 
 @app.route("/queue/norotate_songs")
 def norotate_queue():
-    k.rotate_queue = False
+    k.rotate_songs = False
+    print(f"queue_rotate = {k.rotate_songs}")
     return redirect(url_for("queue"))
 
 
@@ -826,7 +828,7 @@ def switch_songs():
 @app.route("/switch_messages")
 def switch_messages():
     switch_folder('messages')
-    return redirect(url_for("queue"))
+    return redirect(url_for("browse"))
 
 
 @app.route("/switch_to/<foldername>")
