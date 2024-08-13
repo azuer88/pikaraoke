@@ -12,10 +12,12 @@ import subprocess
 import sys
 import threading
 import time
+from pathlib import Path
 
 import cherrypy
 import flask_babel
 import psutil
+import yaml
 from flask import (Flask, flash, make_response, redirect, render_template,
                    request, send_file, url_for)
 from flask_babel import Babel
@@ -308,6 +310,17 @@ def rotate_queue():
 @app.route("/queue/norotate_songs")
 def norotate_queue():
     k.rotate_songs = False
+    return redirect(url_for("queue"))
+
+
+@app.route("/queue/save_playlist")
+def save_playlist():
+    target = Path(k.download_path).parent / "playlists"
+    if not target.is_dir():
+        target.mkdir()
+    playlist = target / "playlist.yml"
+    with playlist.open("w") as g:
+        yaml.dump(k.queue, g)
     return redirect(url_for("queue"))
 
 
