@@ -424,7 +424,7 @@ class Karaoke:
                 # stream_ready_string = "no matching"
                 logging.debug(f"Using image '{self.logo_path}' as video")
                 video = ffmpeg.input(self.logo_path, loop=1, framerate=30).video
-                output = ffmpeg.output(audio, video, ffmpeg_url,
+                output = ffmpeg.output(video, audio, ffmpeg_url,
                                        vcodec="libx264", pix_fmt="yuv420p", video_bitrate="500k",
                                        movflags="frag_keyframe+default_base_moof",
                                        acodec="aac", preset="ultrafast",
