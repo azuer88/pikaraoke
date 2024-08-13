@@ -302,14 +302,12 @@ def resume_queue():
 @app.route("/queue/rotate_songs")
 def rotate_queue():
     k.rotate_songs = True
-    print(f"queue_rotate = {k.rotate_songs}")
     return redirect(url_for("queue"))
 
 
 @app.route("/queue/norotate_songs")
 def norotate_queue():
     k.rotate_songs = False
-    print(f"queue_rotate = {k.rotate_songs}")
     return redirect(url_for("queue"))
 
 
