@@ -61,7 +61,10 @@ class FileResolver:
                 self.cdg_file_path = file_path.replace('.mp3', '.cdg')
                 return True
 
-        raise Exception("No matching .cdg file found for: " + file_path)
+        self.file_path = file_path
+        self.cdg_file_path = ''
+        return True
+        # raise Exception("No matching .cdg file found for: " + file_path)
 
     def process_file(self, file_path):
         file_extension = os.path.splitext(file_path)[1].casefold()

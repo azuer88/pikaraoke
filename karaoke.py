@@ -419,20 +419,25 @@ class Karaoke:
         # Ffmpeg outputs "Stream #0" when the stream is ready to consume  
         stream_ready_string = "Stream #"
 
-        if (fr.cdg_file_path != None):  #handle CDG files
-            logging.info("Playing CDG/MP3 file: " + file_path)
-            # Ffmpeg outputs "Video: cdgraphics" when the stream is ready to consume  
-            stream_ready_string = "Video: cdgraphics"
-            # copyts helps with sync issues, fps=25 prevents ffmpeg from needlessly encoding cdg at 300fps
-            cdg_input = ffmpeg.input(fr.cdg_file_path, copyts=None)
-            video = cdg_input.video.filter("fps", fps=25)
-            #cdg is very fussy about these flags. 
-            # pi ffmpeg needs to encode to aac and cant just copy the mp3 stream
-            # It alse appears to have memory issues with hardware acceleration h264_v4l2m2m  
-            output = ffmpeg.output(audio, video, ffmpeg_url,
-                                   vcodec="libx264", acodec="aac", preset="ultrafast",
-                                   pix_fmt="yuv420p", listen=1, f="mp4", video_bitrate="500k",
-                                   movflags="frag_keyframe+default_base_moof")
+        if fr.cdg_file_path is not None:  # handle CDG files
+            if fr.cdg_file_path == "":
+                output = ffmpeg.output(audio, ffmpeg_url,
+                                       acodec="aac", preset="ultrafast",
+                                       listen=1, f="mp3", video_bitrate="500k")
+            else:
+                logging.info("Playing CDG/MP3 file: " + file_path)
+                # Ffmpeg outputs "Video: cdgraphics" when the stream is ready to consume
+                stream_ready_string = "Video: cdgraphics"
+                # copyts helps with sync issues, fps=25 prevents ffmpeg from needlessly encoding cdg at 300fps
+                cdg_input = ffmpeg.input(fr.cdg_file_path, copyts=None)
+                video = cdg_input.video.filter("fps", fps=25)
+                #cdg is very fussy about these flags.
+                # pi ffmpeg needs to encode to aac and cant just copy the mp3 stream
+                # It alse appears to have memory issues with hardware acceleration h264_v4l2m2m
+                output = ffmpeg.output(audio, video, ffmpeg_url,
+                                       vcodec="libx264", acodec="aac", preset="ultrafast",
+                                       pix_fmt="yuv420p", listen=1, f="mp4", video_bitrate="500k",
+                                       movflags="frag_keyframe+default_base_moof")
         else:
             video = input.video
             output = ffmpeg.output(audio, video, ffmpeg_url,
