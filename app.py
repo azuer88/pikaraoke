@@ -342,6 +342,7 @@ def load_playlist(playlist: str = None):
         playlist = target / playlist
         if playlist.is_file():
             k.paused_queue = True
+            k.queue_clear()
             with playlist.open() as g:
                 k.queue = yaml.load(g, Loader=yaml.FullLoader)
     return redirect(url_for("queue"))
