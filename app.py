@@ -185,6 +185,7 @@ def queue():
     target = Path(k.download_path).parent / "playlists"
     if target.is_dir():
         playlists = [(fname.name, fname.stem) for fname in target.iterdir() if (fname.is_file() and fname.suffix == '.yml')]
+        playlists = sorted(playlists, key=lambda x: x[1])
     else:
         playlists = []
     return render_template(
