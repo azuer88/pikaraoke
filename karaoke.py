@@ -423,7 +423,7 @@ class Karaoke:
             if fr.cdg_file_path == "":
                 # stream_ready_string = "no matching"
                 logging.debug(f"Using image '{self.logo_path}' as video")
-                video = ffmpeg.input(self.logo_path, loop=1, framerate=30, vf="scale=1280:720")
+                video = ffmpeg.input(self.logo_path, loop=1, framerate=30)
                 audio = ffmpeg.input(fr.file_path)
                 output = ffmpeg.output(video, audio, ffmpeg_url,
                                        vcodec="libx264", pix_fmt="yuv420p", video_bitrate="500k",
