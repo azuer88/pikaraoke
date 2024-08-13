@@ -178,11 +178,14 @@
   ><i class="icon icon-trash-empty"></i>{% trans %}Clear all{% endtrans %}</a
 >
     {% if playlists %}
-    <select id="playlists">
-        {% for fname in playlists %}
-            <option value="{{ fname }}">{{ fname }}</option>
-        {% endfor %}
-    </select>
+    <form action="/queue/load_playlist/" method="get">
+        <select id="playlists">
+            {% for fname, label in playlists %}
+                <option value="{{ fname }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" name="Go">
+    </form>
     {% endif %}
     <br />
 
