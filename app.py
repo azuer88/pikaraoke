@@ -330,15 +330,19 @@ def save_playlist():
     return redirect(url_for("queue"))
 
 
-@app.route("/queue/load_playlist/<playlist>?")
+@app.route("/queue/load_playlist/", defaults={"playlist": None})
+@app.route("/queue/load_playlist/<playlist>")
 def load_playlist(playlist: str = None):
+    if playlist is None:
+        playlist = request.args.get('playlist')
     print(f"playlist = {playlist}")
-    target = Path(k.download_path).parent / "playlists"
-    playlist = target / playlist
-    if playlist.is_file():
-        k.paused_queue = True
-        with playlist.open() as g:
-            k.queue = yaml.load(g, Loader=yaml.FullLoader)
+    if playlist is not None:
+        target = Path(k.download_path).parent / "playlists"
+        playlist = target / playlist
+        if playlist.is_file():
+            k.paused_queue = True
+            with playlist.open() as g:
+                k.queue = yaml.load(g, Loader=yaml.FullLoader)
     return redirect(url_for("queue"))
 
 
