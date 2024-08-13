@@ -181,7 +181,13 @@ def clear_command():
 @app.route("/queue")
 def queue():
     return render_template(
-        "queue.html", queue=k.queue, site_title=site_name, title="Queue", admin=is_admin()
+        "queue.html",
+        queue=k.queue,
+        site_title=site_name,
+        title="Queue",
+        admin=is_admin(),
+        queue__paused=k.is_paused,
+        queue_rotate=k.rotate_songs,
     )
 
 
@@ -290,6 +296,18 @@ def pause_queue():
 @app.route("/queue/resume")
 def resume_queue():
     k.pause_queue(False)
+    return redirect(url_for("queue"))
+
+
+@app.route("/queue/rotate")
+def rotate_queue():
+    k.rotate_queue = True
+    return redirect(url_for("queue"))
+
+
+@app.route("/queue/norotate")
+def norotate_queue():
+    k.rotate_queue = False
     return redirect(url_for("queue"))
 
 

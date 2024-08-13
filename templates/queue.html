@@ -148,22 +148,28 @@
   {# MSG: Add all downloaded songs to the queue. #}
 ><i class="icon icon-plus-circled"></i>{% trans %}Add all songs{% endtrans %}</a
 >
-<a class="add-random has-text-success" href="/queue/pause"
-  {# MSG: Pause playing the queue. #}
-  ><i class="icon icon-pause-2"></i>{% trans %}Pause Queue{% endtrans %}</a
->
+{% if queue_paused %}
 <a class="add-random has-text-success" href="/queue/resume"
-  {# MSG: Resume the queue. #}
-  ><i class="icon icon-play-2"></i>{% trans %}Resume Queue{% endtrans %}</a
->
-<a class="add-random has-text-success" href="/switch_songs"
         {# MSG: Resume the queue. #}
-><i class="icon icon-switch"></i>{% trans %}Songs{% endtrans %}</a
+><i class="icon icon-play-2"></i>{% trans %}Resume Queue{% endtrans %}</a
 >
-<a class="add-random has-text-success" href="/switch_messages"
+{% else %}
+<a class="add-random has-text-success" href="/queue/pause"
+        {# MSG: Pause playing the queue. #}
+><i class="icon icon-pause-2"></i>{% trans %}Pause Queue{% endtrans %}</a
+>
+{% endif %}
+{% if queue_rotate %}
+<a class="add-random has-text-success" href="/queue/norotate_songs"
         {# MSG: Resume the queue. #}
-><i class="icon icon-switch"></i>{% trans %}Messages{% endtrans %}</a
+><i class="icon icon-play-2"></i>{% trans %}Messages{% endtrans %}</a
 >
+{% else %}
+<a class="add-random has-text-success" href="/queue/rotate_songs"
+        {# MSG: Resume the queue. #}
+><i class="icon icon-switch"></i>{% trans %}Rotate{% endtrans %}</a
+>
+{% endif %}
 
 <a
   class="confirm-clear has-text-danger is-pulled-right"
