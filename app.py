@@ -324,6 +324,16 @@ def save_playlist():
     return redirect(url_for("queue"))
 
 
+@app.route("/queue/load_playlist/<playlist>")
+def load_playlist(playlist: str):
+    target = Path(k.download_path).parent / "playlists"
+    playlist = target / playlist
+    if playlist.is_file():
+        with playlist.open() as g:
+            k.queue = yaml.load(g, Loader=yaml.FullLoader)
+    return redirect(url_for("queue"))
+
+
 @app.route("/transpose/<semitones>", methods=["GET"])
 def transpose(semitones):
     k.transpose_current(int(semitones))
