@@ -162,12 +162,12 @@
 {% if queue_rotate %}
 <a class="add-random has-text-success" href="/queue/norotate_songs"
         {# MSG: Resume the queue. #}
-><i class="icon icon-play-2"></i>{% trans %}Rotate OFF{% endtrans %}</a
+><i class="icon icon-switch"></i>{% trans %}UnRotate{% endtrans %}</a
 >
 {% else %}
 <a class="add-random has-text-success" href="/queue/rotate_songs"
         {# MSG: Resume the queue. #}
-><i class="icon icon-switch"></i>{% trans %}Rotate ON{% endtrans %}</a
+><i class="icon icon-loop-alt"></i>{% trans %}Rotate{% endtrans %}</a
 >
 {% endif %}
 
