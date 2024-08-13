@@ -299,13 +299,13 @@ def resume_queue():
     return redirect(url_for("queue"))
 
 
-@app.route("/queue/rotate")
+@app.route("/queue/rotate_songs")
 def rotate_queue():
     k.rotate_queue = True
     return redirect(url_for("queue"))
 
 
-@app.route("/queue/norotate")
+@app.route("/queue/norotate_songs")
 def norotate_queue():
     k.rotate_queue = False
     return redirect(url_for("queue"))
