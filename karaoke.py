@@ -421,10 +421,9 @@ class Karaoke:
 
         if fr.cdg_file_path is not None:  # handle CDG files
             if fr.cdg_file_path == "":
-                stream_ready_string = "Not found in anywhere"
                 output = ffmpeg.output(audio, ffmpeg_url,
-                                       acodec="aac", preset="ultrafast",
-                                       listen=1, f="m4a")
+                                       acodec="copy", preset="ultrafast",
+                                       listen=1, f="mp3")
             else:
                 logging.info("Playing CDG/MP3 file: " + file_path)
                 # Ffmpeg outputs "Video: cdgraphics" when the stream is ready to consume
