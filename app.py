@@ -184,7 +184,7 @@ def clear_command():
 def queue():
     target = Path(k.download_path).parent / "playlists"
     if target.is_dir():
-        playlists = [(fname, fname.stem) for fname in target.iterdir() if (fname.is_file() and fname.suffix == '.yml')]
+        playlists = [(fname.name, fname.stem) for fname in target.iterdir() if (fname.is_file() and fname.suffix == '.yml')]
     else:
         playlists = []
     return render_template(
