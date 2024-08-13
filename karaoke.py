@@ -423,13 +423,13 @@ class Karaoke:
             if fr.cdg_file_path == "":
                 # stream_ready_string = "no matching"
                 logging.debug(f"Using image '{self.logo_path}' as video")
-                video = ffmpeg.input(self.logo_path, loop=1).video
+                video = ffmpeg.input(self.logo_path, loop=1, framerate=30).video
                 output = ffmpeg.output(audio, video, ffmpeg_url,
                                        vcodec="libx264", pix_fmt="yuv420p", video_bitrate="500k",
                                        movflags="frag_keyframe+default_base_moof",
                                        acodec="aac", preset="ultrafast",
                                        shortest=None, tune="stillimage",
-                                       listen=1, f="mp4")
+                                       listen=1, t=30, f="mp4")
             else:
                 logging.info("Playing CDG/MP3 file: " + file_path)
                 # Ffmpeg outputs "Video: cdgraphics" when the stream is ready to consume
