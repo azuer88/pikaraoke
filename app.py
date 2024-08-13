@@ -329,6 +329,7 @@ def load_playlist(playlist: str):
     target = Path(k.download_path).parent / "playlists"
     playlist = target / playlist
     if playlist.is_file():
+        k.paused_queue = True
         with playlist.open() as g:
             k.queue = yaml.load(g, Loader=yaml.FullLoader)
     return redirect(url_for("queue"))
