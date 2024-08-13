@@ -16,6 +16,7 @@ from urllib.parse import urlparse
 
 import ffmpeg
 import qrcode
+from playsound import playsound
 from unidecode import unidecode
 
 from lib.file_resolver import FileResolver
@@ -708,8 +709,15 @@ class Karaoke:
                             self.handle_run_loop()
                             i += self.loop_interval
                         if self.queue and not self.paused_queue:
-                            self.play_file(self.queue[0]["file"], self.queue[0]["semitones"],
-                                           loop=self.queue[0].get("loop", False))
+                            filename = self.queue[0]["file"]
+                            if filename.endswith(".mp3"):
+                                song = self.queue.pop(0)
+                                playsound(song["file"])
+                                if self.rotate_songs:
+                                    self.queue.append(song)
+                            else:
+                                self.play_file(self.queue[0]["file"], self.queue[0]["semitones"],
+                                               loop=self.queue[0].get("loop", False))
                 self.log_ffmpeg_output()
                 self.handle_run_loop()
             except KeyboardInterrupt:
