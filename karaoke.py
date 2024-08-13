@@ -421,6 +421,7 @@ class Karaoke:
 
         if fr.cdg_file_path is not None:  # handle CDG files
             if fr.cdg_file_path == "":
+                stream_ready_string = "no matching"
                 output = ffmpeg.output(audio, ffmpeg_url,
                                        acodec="copy", preset="ultrafast",
                                        listen=1, f="mp3")
