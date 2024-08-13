@@ -424,7 +424,7 @@ class Karaoke:
             if fr.cdg_file_path == "":
                 output = ffmpeg.output(audio, ffmpeg_url,
                                        acodec="aac", preset="ultrafast",
-                                       listen=1, f="mp3", video_bitrate="500k")
+                                       listen=1, f="mp4", video_bitrate="500k")
             else:
                 logging.info("Playing CDG/MP3 file: " + file_path)
                 # Ffmpeg outputs "Video: cdgraphics" when the stream is ready to consume
@@ -709,15 +709,8 @@ class Karaoke:
                             self.handle_run_loop()
                             i += self.loop_interval
                         if self.queue and not self.paused_queue:
-                            filename = self.queue[0]["file"]
-                            if filename.endswith(".mp3"):
-                                song = self.queue.pop(0)
-                                playsound(song["file"])
-                                if self.rotate_songs:
-                                    self.queue.append(song)
-                            else:
-                                self.play_file(self.queue[0]["file"], self.queue[0]["semitones"],
-                                               loop=self.queue[0].get("loop", False))
+                            self.play_file(self.queue[0]["file"], self.queue[0]["semitones"],
+                                           loop=self.queue[0].get("loop", False))
                 self.log_ffmpeg_output()
                 self.handle_run_loop()
             except KeyboardInterrupt:
