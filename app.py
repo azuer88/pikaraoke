@@ -182,6 +182,11 @@ def clear_command():
 
 @app.route("/queue")
 def queue():
+    target = Path(k.download_path).parent / "playlists"
+    if target.is_dir():
+        playlists = [fname for fname in target.iterdir() if (fname.is_file() and fname.suffix == '.yml')]
+    else:
+        playlists = []
     return render_template(
         "queue.html",
         queue=k.queue,
@@ -190,6 +195,7 @@ def queue():
         admin=is_admin(),
         queue_paused=k.paused_queue,
         queue_rotate=k.rotate_songs,
+        playlists=playlists,
     )
 
 

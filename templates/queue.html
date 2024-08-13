@@ -177,6 +177,13 @@
   {# MSG: Text for the button which clears the entire queue. #}
   ><i class="icon icon-trash-empty"></i>{% trans %}Clear all{% endtrans %}</a
 >
+    {% if playlists %}
+    <select id="playlists">
+        {% for fname in playlists %}
+            <option value="{{ fname }}">{{ fname }}</option>
+        {% endfor %}
+    </select>
+    {% endif %}
     <br />
 
 {% endif %}
