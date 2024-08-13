@@ -16,7 +16,6 @@ from urllib.parse import urlparse
 
 import ffmpeg
 import qrcode
-from playsound import playsound
 from unidecode import unidecode
 
 from lib.file_resolver import FileResolver
