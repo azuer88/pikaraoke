@@ -179,12 +179,12 @@
 >
     {% if playlists %}
     <form action="/queue/load_playlist/" method="get">
-        <select id="playlists">
+        <select id="playlists" name="playlist">
             {% for fname, label in playlists %}
                 <option value="{{ fname }}">{{ label }}</option>
             {% endfor %}
         </select>
-        <input type="submit" name="Go">
+        <input type="submit" title="Go">
     </form>
     {% endif %}
     <br />
