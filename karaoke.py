@@ -426,9 +426,9 @@ class Karaoke:
                 output = ffmpeg.output(audio, video, ffmpeg_url,
                                        vcodec="libx264", pix_fmt="yuv420p", video_bitrate="500k",
                                        movflags="frag_keyframe+default_base_moof",
-                                       acodec="copy", preset="ultrafast",
+                                       acodec="aac", preset="ultrafast",
                                        shortest=True,
-                                       listen=1, f="mp3")
+                                       listen=1, f="mp4")
             else:
                 logging.info("Playing CDG/MP3 file: " + file_path)
                 # Ffmpeg outputs "Video: cdgraphics" when the stream is ready to consume
