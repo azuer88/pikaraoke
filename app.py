@@ -186,7 +186,7 @@ def queue():
         site_title=site_name,
         title="Queue",
         admin=is_admin(),
-        queue_paused=k.is_paused,
+        queue_paused=k.paused_queue,
         queue_rotate=k.rotate_songs,
     )
 
