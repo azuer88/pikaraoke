@@ -428,14 +428,13 @@ class Karaoke:
                 audio = ffmpeg.input(fr.file_path)
                 output = ffmpeg.output(video, audio, ffmpeg_url,
                                        vcodec="libx265", pix_fmt="yuv420p10le",
-                                       x265_params="lossless=1:crf=0",
                                        # video_bitrate="500k",
                                        acodec="aac", preset="ultrafast",
                                        shortest=None, tune="stillimage",
                                        vf="loop=-1:1:0",
                                        listen=1, f="mp4",
                                        movflags="faststart",
-                                       )
+                                       ).global_args("-x265-params", "lossless=1")
             else:
                 logging.info("Playing CDG/MP3 file: " + file_path)
                 # Ffmpeg outputs "Video: cdgraphics" when the stream is ready to consume
