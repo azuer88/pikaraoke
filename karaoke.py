@@ -427,11 +427,13 @@ class Karaoke:
                 video = ffmpeg.input(target.as_posix(), loop=1)
                 audio = ffmpeg.input(fr.file_path)
                 output = ffmpeg.output(audio, video, ffmpeg_url,
-                                       vcodec="libx264", pix_fmt="yuv420p", video_bitrate="500k",
-                                       movflags="frag_keyframe+default_base_moof",
+                                       vcodec="libx264", pix_fmt="yuv420p",
+                                       # video_bitrate="500k",
                                        acodec="aac", preset="ultrafast",
                                        shortest=None, tune="stillimage",
-                                       listen=1, t=30, f="mp4")
+                                       listen=1, t=30, f="mp4",
+                                       movflags="frag_keyframe+default_base_moof",
+                                       )
             else:
                 logging.info("Playing CDG/MP3 file: " + file_path)
                 # Ffmpeg outputs "Video: cdgraphics" when the stream is ready to consume
