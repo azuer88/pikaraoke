@@ -427,7 +427,7 @@ class Karaoke:
                 video = ffmpeg.input(target.as_posix(), loop=1)
                 audio = ffmpeg.input(fr.file_path)
                 output = ffmpeg.output(audio, video, ffmpeg_url,
-                                       vcodec="libx264", pix_fmt="yuv420p",
+                                       vcodec="libx264", pix_fmt="yuv420p10le",
                                        # video_bitrate="500k",
                                        acodec="aac", preset="ultrafast",
                                        shortest=None, tune="stillimage",
