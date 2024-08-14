@@ -424,16 +424,16 @@ class Karaoke:
                 # stream_ready_string = "no matching"
                 logging.debug(f"Using image '{self.logo_path}' as video")
                 target = Path(self.logo_path).with_suffix('.jpg')
-                video = ffmpeg.input(target.as_posix(), pix_fmt="yuv420p10le", t=15, framerate=30)
+                video = ffmpeg.input(target.as_posix(), pix_fmt="yuv420p10le", t=300, framerate=15)
                 audio = ffmpeg.input(fr.file_path)
                 output = ffmpeg.output(video, audio, ffmpeg_url,
                                        vcodec="libx264", pix_fmt="yuv420p10le",
                                        # video_bitrate="500k",
                                        acodec="aac", preset="ultrafast",
                                        shortest=None, tune="stillimage",
-                                       vf="loop=-1:1:0,format=yuv420p10le",
+                                       vf="loop=-1:1,format=yuv420p10le",
                                        listen=1, t=30, f="mp4",
-                                       movflags="frag_keyframe+default_base_moof",
+                                       movflags="faststart",
                                        )
             else:
                 logging.info("Playing CDG/MP3 file: " + file_path)
