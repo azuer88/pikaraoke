@@ -426,7 +426,7 @@ class Karaoke:
                 target = Path(self.logo_path).with_suffix('.jpg')
                 video = ffmpeg.input(
                     target.as_posix(),
-                    pix_fmt="yuv420p10le",
+                    # pix_fmt="yuv420p10le",
                     # t=15,
                     framerate=30,
                     loop=1,
