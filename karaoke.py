@@ -422,7 +422,6 @@ class Karaoke:
         if fr.cdg_file_path is not None:  # handle CDG files
             if fr.cdg_file_path == "":
                 # stream_ready_string = "no matching"
-                stream_ready_string = "Output #0"
                 logging.debug(f"Using image '{self.logo_path}' as video")
                 target = Path(self.logo_path).with_suffix('.jpg')
                 video = ffmpeg.input(target.as_posix(), loop=1, framerate=30, pix_fmt="yuv420p")
