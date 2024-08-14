@@ -429,7 +429,7 @@ class Karaoke:
                     pix_fmt="yuv420p10le",
                     # t=15,
                     framerate=30,
-                    loop=-1,
+                    loop=1,
                 )
                 audio = ffmpeg.input(fr.file_path)
                 output = ffmpeg.output(audio, video, ffmpeg_url,
