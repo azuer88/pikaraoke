@@ -425,10 +425,10 @@ class Karaoke:
                 stream_ready_string = "Output #0"
                 logging.debug(f"Using image '{self.logo_path}' as video")
                 target = Path(self.logo_path).with_suffix('.jpg')
-                video = ffmpeg.input(target.as_posix(), loop=1, framerate=30)
+                video = ffmpeg.input(target.as_posix(), loop=1, framerate=30, pix_fmt="yuv420p")
                 audio = ffmpeg.input(fr.file_path)
                 output = ffmpeg.output(audio, video, ffmpeg_url,
-                                       vcodec="libx264", pix_fmt="yuv420p10le", video_bitrate="500k",
+                                       vcodec="libx264", pix_fmt="yuv420", video_bitrate="500k",
                                        movflags="frag_keyframe+default_base_moof",
                                        acodec="aac", preset="ultrafast",
                                        shortest=None, tune="stillimage",
