@@ -1,0 +1,39 @@
+#!/bin/bash 
+# set -x
+# set -e
+# exec startx &
+# sleep 3
+cd "$(dirname "$0")"
+source .venv/bin/activate
+source ../check_wifi
+
+export DISPLAY=:0.0
+RESOLUTION=$(<resolution)
+# HD 1920,1080
+# RESOLUTION=1920,1080
+# 4K 3840,2160
+# RESOLUTION=3840,2160
+echo "RESOLUTION: '$RESOLUTION'"
+if [ -f $HOME/hotspot ]; then
+	HIDE_URL=""
+else
+        HIDE_URL="--hide-url"
+fi
+colors[0]="#7A0054"
+colors[1]="#FB4BC3"
+colors[2]="#FA00AC"
+colors[3]="#7A255F"
+colors[4]="#C70088"
+colors[5]="#610945"
+colors[6]="#FA55C6"
+colors[7]="#E014A0"
+colors[8]="#66164D"
+colors[9]="#AD107B"
+colors[10]="#AB1A7F"
+
+size=${#colors[@]}
+index=$(($RANDOM % $size))
+color="${colors[$index]}"
+
+python3 app.py --window-size $RESOLUTION $HIDE_URL --high-quality --volume 0.55 --logo-path /home/default/logo.png --admin-password pass.1234 --background $color
+
