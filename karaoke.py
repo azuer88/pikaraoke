@@ -18,6 +18,7 @@ import ffmpeg
 import qrcode
 from unidecode import unidecode
 
+from lib.cec_controller import CECController
 from lib.file_resolver import FileResolver
 from lib.get_platform import (get_ffmpeg_version, get_os_version, get_platform,
                               is_raspberry_pi, supports_hardware_h264_encoding)
@@ -88,11 +89,13 @@ class Karaoke:
             ffmpeg_url=None,
             prefer_hostname=True,
             paused_queue=False,
+            cec=True,
     ):
 
         # override with supplied constructor args if provided
         self.rotate_songs = False
         self.paused_queue = paused_queue
+        self.cec = None
         self.port = port
         self.ffmpeg_port = ffmpeg_port
         self.hide_url = hide_url
@@ -182,6 +185,10 @@ class Karaoke:
         self.get_youtubedl_version()
 
         self.generate_qr_code()
+
+        if cec and self.raspberry_pi:
+            self.cec = CECController(self)
+            self.cec.start()
 
     # Other ip-getting methods are unreliable and sometimes return 127.0.0.1
     # https://stackoverflow.com/a/28950776
@@ -520,6 +527,8 @@ class Karaoke:
     def start_song(self):
         logging.info(f"Song starting: {self.now_playing}")
         self.is_playing = True
+        if self.cec:
+            self.cec.wake_and_activate()
 
     def end_song(self):
         logging.info(f"Song ending: {self.now_playing}")
@@ -699,6 +708,8 @@ class Karaoke:
 
     def stop(self):
         self.running = False
+        if self.cec:
+            self.cec.shutdown()
 
     def handle_run_loop(self):
         time.sleep(self.loop_interval / 1000)

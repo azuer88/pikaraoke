@@ -1057,6 +1057,12 @@ if __name__ == "__main__":
         default=background,
         help=f"Set the background color of the splash screen.  Default is {background}",
     )
+    parser.add_argument(
+        "--no-cec",
+        action="store_true",
+        help="Disable HDMI CEC TV control and remote keypress support (Raspberry Pi only, enabled by default).",
+        required=False,
+    )
 
     args = parser.parse_args()
 
@@ -1110,7 +1116,8 @@ if __name__ == "__main__":
         screensaver_timeout=args.screensaver_timeout,
         url=args.url,
         ffmpeg_url=args.ffmpeg_url,
-        prefer_hostname=args.prefer_hostname
+        prefer_hostname=args.prefer_hostname,
+        cec=not args.no_cec,
     )
 
     # Start the CherryPy WSGI web server
