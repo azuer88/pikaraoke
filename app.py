@@ -873,7 +873,7 @@ def switch_to_folder(foldername: str):
 
 
 # Handle sigterm, apparently cherrypy won't shut down without explicit handling
-signal.signal(signal.SIGTERM, lambda signum, stack_frame: k.stop())
+signal.signal(signal.SIGTERM, lambda signum, stack_frame: k.stop() if k else sys.exit(0))
 
 
 def get_default_youtube_dl_path(os_platform):

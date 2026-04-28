@@ -19,25 +19,31 @@ class CECController:
         threading.Thread(target=self._init_adapter, daemon=True).start()
         return True
 
-    def _detect_port(self):
-        """Use a callback-free lib to find which adapter has an active TV."""
+    def _make_probe_cfg(self):
         cec = self._cec
-
         cfg = cec.libcec_configuration()
-        cfg.strDeviceName = "pikaraoke-detect"
+        cfg.strDeviceName = "pika-probe"
         cfg.bActivateSource = 0
         cfg.deviceTypes.Add(cec.CEC_DEVICE_TYPE_RECORDING_DEVICE)
         cfg.clientVersion = cec.LIBCEC_VERSION_CURRENT
+        return cfg
 
-        probe = cec.ICECAdapter.Create(cfg)
-        adapters = probe.DetectAdapters()
+    def _detect_port(self):
+        """Create a fresh adapter per port — reusing one across Open/Close/Open segfaults."""
+        cec = self._cec
+
+        lister = cec.ICECAdapter.Create(self._make_probe_cfg())
+        adapters = lister.DetectAdapters()
+        lister.Close()
 
         found = None
         for adapter in adapters:
             port = adapter.strComName
             logging.debug(f"CEC: Probing {port}")
+            probe = cec.ICECAdapter.Create(self._make_probe_cfg())
             if not probe.Open(port):
                 logging.debug(f"CEC: Could not open {port}")
+                probe.Close()
                 continue
             status = probe.GetDevicePowerStatus(cec.CECDEVICE_TV)
             probe.Close()
@@ -73,15 +79,17 @@ class CECController:
             cec.CEC_USER_CONTROL_CODE_VOLUME_DOWN:         k.vol_down,
         }
 
+        logging.info("CEC: building cfg")
         cfg = cec.libcec_configuration()
         cfg.strDeviceName = "pikaraoke"
         cfg.bActivateSource = 0
         cfg.deviceTypes.Add(cec.CEC_DEVICE_TYPE_RECORDING_DEVICE)
         cfg.clientVersion = cec.LIBCEC_VERSION_CURRENT
-        cfg.SetLogCallback(self._on_log)
-        cfg.SetKeyPressCallback(self._on_key_press)
+        logging.info("CEC: skipping callbacks for test")
 
+        logging.info("CEC: creating adapter")
         self.lib = cec.ICECAdapter.Create(cfg)
+        logging.info(f"CEC: opening {port}")
         if not self.lib.Open(port):
             logging.error(f"CEC: Failed to open {port} with callbacks")
             self.lib = None
@@ -90,9 +98,11 @@ class CECController:
         logging.info(f"CEC: Ready on {port}")
 
     def wake_and_activate(self):
-        if self.lib:
-            self.lib.PowerOnDevices(self._cec.CECDEVICE_TV)
-            self.lib.SetActiveSource()
+        if not self.lib:
+            logging.warning("CEC: wake_and_activate called but CEC not ready yet")
+            return
+        self.lib.PowerOnDevices(self._cec.CECDEVICE_TV)
+        self.lib.SetActiveSource()
 
     def standby_tv(self):
         if self.lib:
@@ -104,13 +114,16 @@ class CECController:
             self.lib = None
 
     def _on_key_press(self, key, duration):
+        logging.info(f"CEC key received: code={key} (0x{key:02x}) duration={duration}")
         # duration=0 is the initial press; >0 is the release with hold duration
         if duration > 0:
             return 0
         action = self._key_actions.get(key)
         if action:
-            logging.debug(f"CEC key {key} -> {action.__name__}")
+            logging.info(f"CEC key {key} -> {action.__name__}")
             action()
+        else:
+            logging.info(f"CEC key {key} (0x{key:02x}) not mapped")
         return 0
 
     def _on_log(self, level, time, message):
