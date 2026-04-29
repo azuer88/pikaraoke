@@ -12,6 +12,7 @@ import qrcode
 from flask_babel import _
 from qrcode.image.pure import PyPNGImage
 
+from pikaraoke.lib.cec_controller import CECController
 from pikaraoke.lib.download_manager import DownloadManager
 from pikaraoke.lib.events import EventSystem
 from pikaraoke.lib.ffmpeg import (
@@ -96,6 +97,7 @@ class Karaoke:
         port: int = 5555,
         prefer_hostname: bool | None = None,
         preferred_language: str | None = None,
+        cec: bool = True,
         socketio=None,
         streaming_format: str = "hls",
         url: str | None = None,
@@ -277,6 +279,17 @@ class Karaoke:
             logging.info("No existing database found, scanning song directory")
             result = self._scanner.scan(self.download_path)
             self._apply_scan_result(result)
+
+        # CEC: start after everything else is initialized (Raspberry Pi only)
+        self._cec: CECController | None = None
+        if cec and self.is_raspberry_pi:
+            self._cec = CECController(self)
+            self._cec.start()
+            self.events.on("playback_started", self._cec_wake_and_activate)
+
+    def _cec_wake_and_activate(self) -> None:
+        if self._cec:
+            self._cec.wake_and_activate()
 
     def _apply_scan_result(self, result: ScanResult) -> None:
         """Update SongList and emit notifications after a scan."""
@@ -473,6 +486,14 @@ class Karaoke:
         self.update_now_playing_socket()
         return True
 
+    def pause(self) -> bool:
+        """Toggle pause/play."""
+        return self.playback_controller.pause()
+
+    def skip(self) -> bool:
+        """Skip the current song."""
+        return self.playback_controller.skip()
+
     def vol_up(self) -> None:
         """Increase volume by 10%."""
         new_vol = min(self.volume + 0.1, 1.0)
@@ -504,6 +525,8 @@ class Karaoke:
     def stop(self) -> None:
         """Stop the karaoke run loop."""
         self.running = False
+        if self._cec:
+            self._cec.shutdown()
 
     def handle_run_loop(self) -> None:
         """Handle one iteration of the main run loop with a sleep interval."""

@@ -113,6 +113,12 @@ def parse_pikaraoke_args() -> argparse.Namespace:
         required=False,
     )
     parser.add_argument(
+        "--no-cec",
+        action="store_true",
+        help="Disable HDMI CEC TV control and remote keypress support (Raspberry Pi only, enabled by default).",
+        required=False,
+    )
+    parser.add_argument(
         "--hide-splash-screen",
         "--headless",
         action="store_true",
