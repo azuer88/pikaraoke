@@ -8,13 +8,13 @@
   "glyphs": [
     {
       "uid": "ce06b5805120d0c2f8d60cd3f1a4fdb5",
-      "css": "play-1",
+      "css": "play",
       "code": 59392,
       "src": "fontawesome"
     },
     {
       "uid": "0b28050bac9d3facf2f0226db643ece0",
-      "css": "pause-1",
+      "css": "pause",
       "code": 59393,
       "src": "fontawesome"
     },
@@ -305,42 +305,6 @@
       "css": "loop-alt",
       "code": 59419,
       "src": "iconic"
-    },
-    {
-      "uid": "f0eac0958921fe45b85d01b79d76e86b",
-      "css": "switch",
-      "code": 59422,
-      "src": "entypo"
-    },
-    {
-      "uid": "8aa99bc60f3553bb3e31b73dd6e744c8",
-      "css": "rocket",
-      "code": 61749,
-      "src": "fontawesome"
-    },
-    {
-      "uid": "e44ef09cb81413287d702eefa65dd790",
-      "css": "pause-2",
-      "code": 59423,
-      "src": "typicons"
-    },
-    {
-      "uid": "3e290a111c0f3ee3acbf7b5f17ccc04a",
-      "css": "play-2",
-      "code": 59424,
-      "src": "typicons"
-    },
-    {
-      "uid": "cb13afd4722a849d48056540bb74c47e",
-      "css": "play",
-      "code": 59421,
-      "src": "entypo"
-    },
-    {
-      "uid": "d8d378d0ce413f231dfa37592e39c227",
-      "css": "pause",
-      "code": 59420,
-      "src": "entypo"
     }
   ]
 }

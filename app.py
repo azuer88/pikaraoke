@@ -1,18 +1,23 @@
+#!/usr/bin/env python3
+
 import argparse
 import datetime
 import hashlib
 import json
 import logging
 import os
+import random
 import signal
 import subprocess
 import sys
 import threading
 import time
+from pathlib import Path
 
 import cherrypy
 import flask_babel
 import psutil
+import yaml
 from flask import (Flask, flash, make_response, redirect, render_template,
                    request, send_file, url_for)
 from flask_babel import Babel
@@ -21,7 +26,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
+# from selenium.webdriver.common.keys import Keys
+# noinspection PyPep8Naming
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -32,10 +38,10 @@ from lib.get_platform import get_platform, is_raspberry_pi
 try:
     from urllib.parse import quote, unquote
 except ImportError:
+    # noinspection PyUnresolvedReferences
     from urllib import quote, unquote
 
 _ = flask_babel.gettext
-
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -47,6 +53,10 @@ site_name = "PiKaraoke"
 admin_password = None
 raspberry_pi = is_raspberry_pi()
 linux = get_platform() == "linux"
+background = "black"
+k = None
+WIFI_IMAGE = "/home/default/wifi.png"
+
 
 def filename_from_path(file_path, remove_youtube_id=True):
     rc = os.path.basename(file_path)
@@ -56,34 +66,42 @@ def filename_from_path(file_path, remove_youtube_id=True):
             rc = rc.split("---")[0]  # removes youtube id if present
         except TypeError:
             # more fun python 3 hacks
+            # noinspection PyArgumentEqualDefault
             rc = rc.split("---".encode("utf-8", "ignore"))[0]
     return rc
 
+
 def arg_path_parse(path):
-    if (type(path) == list):
+    if isinstance(path, (list, tuple)):
         return " ".join(path)
     else:
         return path
 
+
 def url_escape(filename):
     return quote(filename.encode("utf8"))
 
+
 def hash_dict(d):
+    # noinspection PyArgumentEqualDefault
     return hashlib.md5(json.dumps(d, sort_keys=True, ensure_ascii=True).encode('utf-8', "ignore")).hexdigest()
 
+
 def is_admin():
-    if (admin_password == None):
+    if admin_password is None:
         return True
-    if ('admin' in request.cookies):
+    if 'admin' in request.cookies:
         a = request.cookies.get("admin")
-        if (a == admin_password):
+        if a == admin_password:
             return True
     return False
+
 
 @babel.localeselector
 def get_locale():
     """Select the language to display the webpage in based on the Accept-Language header"""
     return request.accept_languages.best_match(LANGUAGES.keys())
+
 
 @app.route("/")
 def home():
@@ -95,11 +113,12 @@ def home():
         admin=is_admin()
     )
 
+
 @app.route("/auth", methods=["POST"])
 def auth():
     d = request.form.to_dict()
     p = d["admin-password"]
-    if (p == admin_password):
+    if p == admin_password:
         resp = make_response(redirect('/'))
         expire_date = datetime.datetime.now()
         expire_date = expire_date + datetime.timedelta(days=90)
@@ -112,20 +131,24 @@ def auth():
         flash(_("Incorrect admin password!"), "is-danger")
     return resp
 
+
 @app.route("/login")
 def login():
     return render_template("login.html")
 
+
 @app.route("/logout")
 def logout():
     resp = make_response(redirect('/'))
+    # noinspection PyArgumentEqualDefault
     resp.set_cookie('admin', '')
     flash("Logged out of admin mode!", "is-success")
     return resp
 
+
 @app.route("/nowplaying")
 def nowplaying():
-    try: 
+    try:
         if len(k.queue) >= 1:
             next_song = k.queue[0]["title"]
             next_user = k.queue[0]["user"]
@@ -143,11 +166,12 @@ def nowplaying():
             "transpose_value": k.now_playing_transpose,
             "volume": k.volume,
         }
-        rc["hash"] = hash_dict(rc) # used to detect changes in the now playing data
+        rc["hash"] = hash_dict(rc)  # used to detect changes in the now playing data
         return json.dumps(rc)
-    except (Exception) as e:
+    except Exception as e:
         logging.error("Problem loading /nowplaying, pikaraoke may still be starting up: " + str(e))
         return ""
+
 
 # Call this after receiving a command in the front end
 @app.route("/clear_command")
@@ -155,11 +179,26 @@ def clear_command():
     k.now_playing_command = None
     return ""
 
+
 @app.route("/queue")
 def queue():
+    target = Path(k.download_path).parent / "playlists"
+    if target.is_dir():
+        playlists = [(fname.name, fname.stem) for fname in target.iterdir() if (fname.is_file() and fname.suffix == '.yml')]
+        playlists = sorted(playlists, key=lambda x: x[1])
+    else:
+        playlists = []
     return render_template(
-        "queue.html", queue=k.queue, site_title=site_name, title="Queue", admin=is_admin()
+        "queue.html",
+        queue=k.queue,
+        site_title=site_name,
+        title="Queue",
+        admin=is_admin(),
+        queue_paused=k.paused_queue,
+        queue_rotate=k.rotate_songs,
+        playlists=playlists,
     )
+
 
 @app.route("/get_queue")
 def get_queue():
@@ -167,6 +206,7 @@ def get_queue():
         return json.dumps(k.queue)
     else:
         return json.dumps([])
+
 
 @app.route("/queue/addrandom", methods=["GET"])
 def add_random():
@@ -177,6 +217,14 @@ def add_random():
     else:
         flash("Ran out of songs!", "is-warning")
     return redirect(url_for("queue"))
+
+
+@app.route("/queue/addall", methods=["GET"])
+def add_all_songs():
+    k.queue_all_songs()
+    flash("Added all songs to the queue", "is-success")
+    return redirect(url_for("queue"))
+
 
 @app.route("/queue/edit", methods=["GET"])
 def queue_edit():
@@ -206,6 +254,16 @@ def queue_edit():
                 flash("Deleted from queue: " + song, "is-success")
             else:
                 flash("Error deleting from queue: " + song, "is-danger")
+        elif action == "loop":
+            result = k.queue_edit(song, "loop")
+            if result:
+                if k.song_is_looped(song):
+                    flash("Loop play song: " + song, "is-success")
+                else:
+                    flash("Single play song: " + song, "is-success")
+            else:
+                flash("Error deleting from queue: " + song, "is-danger")
+
     return redirect(url_for("queue"))
 
 
@@ -223,7 +281,7 @@ def enqueue():
         user = d["song-added-by"]
     rc = k.enqueue(song, user)
     song_title = filename_from_path(song)
-    return json.dumps({"song": song_title, "success": rc })
+    return json.dumps({"song": song_title, "success": rc})
 
 
 @app.route("/skip")
@@ -238,6 +296,58 @@ def pause():
     return redirect(url_for("home"))
 
 
+@app.route("/queue/pause")
+def pause_queue():
+    k.pause_queue(True)
+    return redirect(url_for("queue"))
+
+
+@app.route("/queue/resume")
+def resume_queue():
+    k.pause_queue(False)
+    return redirect(url_for("queue"))
+
+
+@app.route("/queue/rotate_songs")
+def rotate_queue():
+    k.rotate_songs = True
+    return redirect(url_for("queue"))
+
+
+@app.route("/queue/norotate_songs")
+def norotate_queue():
+    k.rotate_songs = False
+    return redirect(url_for("queue"))
+
+
+@app.route("/queue/save_playlist")
+def save_playlist():
+    target = Path(k.download_path).parent / "playlists"
+    if not target.is_dir():
+        target.mkdir()
+    playlist = target / "playlist.yml"
+    with playlist.open("w") as g:
+        yaml.dump(k.queue, g)
+    return redirect(url_for("queue"))
+
+
+@app.route("/queue/load_playlist/", defaults={"playlist": None})
+@app.route("/queue/load_playlist/<playlist>")
+def load_playlist(playlist: str = None):
+    if playlist is None:
+        playlist = request.args.get('playlist')
+    print(f"playlist = {playlist}")
+    if playlist is not None:
+        target = Path(k.download_path).parent / "playlists"
+        playlist = target / playlist
+        if playlist.is_file():
+            k.paused_queue = True
+            k.queue_clear()
+            with playlist.open() as g:
+                k.queue = yaml.load(g, Loader=yaml.FullLoader)
+    return redirect(url_for("queue"))
+
+
 @app.route("/transpose/<semitones>", methods=["GET"])
 def transpose(semitones):
     k.transpose_current(int(semitones))
@@ -249,10 +359,13 @@ def restart():
     k.restart()
     return redirect(url_for("home"))
 
+
+# noinspection PyShadowingNames
 @app.route("/volume/<volume>")
 def volume(volume):
     k.volume_change(float(volume))
     return redirect(url_for("home"))
+
 
 @app.route("/vol_up")
 def vol_up():
@@ -270,7 +383,7 @@ def vol_down():
 def search():
     if "search_string" in request.args:
         search_string = request.args["search_string"]
-        if ("non_karaoke" in request.args and request.args["non_karaoke"] == "true"):
+        if "non_karaoke" in request.args and request.args["non_karaoke"] == "true":
             search_results = k.get_search_results(search_string)
         else:
             search_results = k.get_karaoke_search_results(search_string)
@@ -286,6 +399,7 @@ def search():
         search_string=search_string,
     )
 
+
 @app.route("/autocomplete")
 def autocomplete():
     q = request.args.get('q').lower()
@@ -299,29 +413,30 @@ def autocomplete():
     )
     return response
 
+
 @app.route("/browse", methods=["GET"])
 def browse():
-    search = False
+    search_enabled = False
     q = request.args.get('q')
     if q:
-        search = True
+        search_enabled = True
     page = request.args.get(get_page_parameter(), type=int, default=1)
 
     available_songs = k.available_songs
 
     letter = request.args.get('letter')
-   
-    if (letter):
+
+    if letter:
         result = []
-        if (letter == "numeric"):
+        if letter == "numeric":
             for song in available_songs:
                 f = k.filename_from_path(song)[0]
-                if (f.isnumeric()):
+                if f.isnumeric():
                     result.append(song)
-        else: 
+        else:
             for song in available_songs:
                 f = k.filename_from_path(song).lower()
-                if (f.startswith(letter.lower())):
+                if f.startswith(letter.lower()):
                     result.append(song)
         available_songs = result
 
@@ -332,9 +447,16 @@ def browse():
     else:
         songs = available_songs
         sort_order = "Alphabetical"
-    
+
     results_per_page = 500
-    pagination = Pagination(css_framework='bulma', page=page, total=len(songs), search=search, record_name='songs', per_page=results_per_page)
+    pagination = Pagination(
+        css_framework='bulma',
+        page=page,
+        total=len(songs),
+        search=search_enabled,
+        record_name='songs',
+        per_page=results_per_page
+    )
     start_index = (page - 1) * (results_per_page - 1)
     return render_template(
         "files.html",
@@ -355,22 +477,22 @@ def download():
     song = d["song-url"]
     user = d["song-added-by"]
     if "queue" in d and d["queue"] == "on":
-        queue = True
+        queue_on = True
     else:
-        queue = False
+        queue_on = False
 
     # download in the background since this can take a few minutes
-    t = threading.Thread(target=k.download_video, args=[song, queue, user])
+    t = threading.Thread(target=k.download_video, args=[song, queue_on, user])
     t.daemon = True
     t.start()
 
     flash_message = (
-        "Download started: '"
-        + song
-        + "'. This may take a couple of minutes to complete. "
+            "Download started: '"
+            + song
+            + "'. This may take a couple of minutes to complete. "
     )
 
-    if queue:
+    if queue_on:
         flash_message += "Song will be added to queue."
     else:
         flash_message += 'Song will appear in the "available songs" list.'
@@ -382,19 +504,28 @@ def download():
 def qrcode():
     return send_file(k.qr_code_path, mimetype="image/png")
 
+
+@app.route("/wifiqrcode")
+def wifi_qrcode():
+    return send_file(WIFI_IMAGE, mimetype="image/png")
+
+
 @app.route("/logo")
 def logo():
     return send_file(k.logo_path, mimetype="image/png")
+
 
 @app.route("/end_song", methods=["GET"])
 def end_song():
     k.end_song()
     return "ok"
 
+
 @app.route("/start_song", methods=["GET"])
 def start_song():
     k.start_song()
     return "ok"
+
 
 @app.route("/files/delete", methods=["GET"])
 def delete_file():
@@ -424,6 +555,7 @@ def edit_file():
             flash(queue_error_msg + song_path, "is-danger")
             return redirect(url_for("browse"))
         else:
+            # noinspection PyArgumentEqualDefault
             return render_template(
                 "edit.html",
                 site_title=site_name,
@@ -437,12 +569,12 @@ def edit_file():
             old_name = d["old_file_name"]
             if k.is_song_in_queue(old_name):
                 # check one more time just in case someone added it during editing
-                flash(queue_error_msg + song_path, "is-danger")
+                flash(queue_error_msg + old_name, "is-danger")
             else:
                 # check if new_name already exist
                 file_extension = os.path.splitext(old_name)[1]
                 if os.path.isfile(
-                    os.path.join(k.download_path, new_name + file_extension)
+                        os.path.join(k.download_path, new_name + file_extension)
                 ):
                     flash(
                         "Error Renaming file: '%s' to '%s'. Filename already exists."
@@ -459,52 +591,71 @@ def edit_file():
             flash("Error: No filename parameters were specified!", "is-danger")
         return redirect(url_for("browse"))
 
+
 @app.route("/splash")
 def splash():
+    wifi_image = ""
     # Only do this on Raspberry Pis
     if raspberry_pi:
-        status = subprocess.run(['iwconfig', 'wlan0'], stdout=subprocess.PIPE).stdout.decode('utf-8')
-        text = ""
+        # noinspection PyArgumentEqualDefault
+        status = subprocess.run(['iwconfig', 'wlan0'],
+                                stdout=subprocess.PIPE).stdout.decode('utf-8')
         if "Mode:Master" in status:
             # Wifi is setup as a Access Point
             ap_name = ""
             ap_password = ""
-            
-            if os.path.isfile("/etc/raspiwifi/raspiwifi.conf"):
-                f = open("/etc/raspiwifi/raspiwifi.conf", "r")
-            
-                # Override the default values according to the configuration file.
-                for line in f.readlines():
-                    line = line.split("#", 1)[0]
-                    if "ssid_prefix=" in line:
-                        ap_name = line.split("ssid_prefix=")[1].strip()
-                    elif "wpa_key=" in line:
-                        ap_password = line.split("wpa_key=")[1].strip()
 
-            if len(ap_password) > 0:
-                text = [f"Wifi Network: {ap_name} Password: {ap_password}", f"Configure Wifi: {k.url.rpartition(':')[0]}"]
+            wifi_image = WIFI_IMAGE
+
+            if os.path.isfile(wifi_image):
+                text = ""
             else:
-                text = [f"Wifi Network: {ap_name}", f"Configure Wifi: {k.url.rpartition(':',1)[0]}"]
+                wifi_image = ""
+                if os.path.isfile("/etc/raspiwifi/raspiwifi.conf"):
+                    f = open("/etc/raspiwifi/raspiwifi.conf")
+
+                    # Override the default values according to the configuration file.
+                    for line in f.readlines():
+                        line = line.split("#", 1)[0]
+                        if "ssid_prefix=" in line:
+                            ap_name = line.split("ssid_prefix=")[1].strip()
+                        elif "wpa_key=" in line:
+                            ap_password = line.split("wpa_key=")[1].strip()
+
+                if len(ap_password) > 0:
+                    text = [f"Wifi Network: {ap_name} Password: {ap_password}",
+                            f"Configure Wifi: {k.url.rpartition(':')[0]}"]
+                else:
+                    text = [f"Wifi Network: {ap_name}", f"Configure Wifi: {k.url.rpartition(':')[0]}"]
         else:
             # You are connected to Wifi as a client
             text = ""
     else:
         # Not a Raspberry Pi
         text = ""
-
+    global background
+    if isinstance(background, (tuple, list)):
+        background_color = random.choice(background)
+    else:
+        background_color = background
+    print(f"background_color: {background_color}")
     return render_template(
         "splash.html",
         blank_page=True,
         url=k.url,
         hostap_info=text,
+        wifi_image=wifi_image,
         hide_url=k.hide_url,
         hide_overlay=k.hide_overlay,
-        screensaver_timeout=k.screensaver_timeout
+        screensaver_timeout=k.screensaver_timeout,
+        screensaver_enabled=int(k.screensaver_timeout) > 0,
+        background_color=background_color,
     )
+
 
 @app.route("/info")
 def info():
-    url=k.url
+    url = k.url
 
     # cpu
     cpu = str(psutil.cpu_percent()) + "%"
@@ -514,12 +665,12 @@ def info():
     available = round(memory.available / 1024.0 / 1024.0, 1)
     total = round(memory.total / 1024.0 / 1024.0, 1)
     memory = (
-        str(available)
-        + "MB free / "
-        + str(total)
-        + "MB total ( "
-        + str(memory.percent)
-        + "% )"
+            str(available)
+            + "MB free / "
+            + str(total)
+            + "MB total ( "
+            + str(memory.percent)
+            + "% )"
     )
 
     # disk
@@ -528,12 +679,12 @@ def info():
     free = round(disk.free / 1024.0 / 1024.0 / 1024.0, 1)
     total = round(disk.total / 1024.0 / 1024.0 / 1024.0, 1)
     disk = (
-        str(free)
-        + "GB free / "
-        + str(total)
-        + "GB total ( "
-        + str(disk.percent)
-        + "% )"
+            str(free)
+            + "GB free / "
+            + str(total)
+            + "GB total ( "
+            + str(disk.percent)
+            + "% )"
     )
 
     # youtube-dl
@@ -555,35 +706,37 @@ def info():
         is_linux=linux,
         pikaraoke_version=VERSION,
         admin=is_admin(),
-        admin_enabled=admin_password != None
+        admin_enabled=admin_password is not None
     )
 
 
 # Delay system commands to allow redirect to render first
 def delayed_halt(cmd):
     time.sleep(1.5)
-    k.queue_clear()  
+    k.queue_clear()
     cherrypy.engine.stop()
     cherrypy.engine.exit()
     k.stop()
     if cmd == 0:
         sys.exit()
     if cmd == 1:
-        os.system("shutdown now")
+        os.system("sudo shutdown now")
     if cmd == 2:
-        os.system("reboot")
+        os.system("sudo reboot")
     if cmd == 3:
         process = subprocess.Popen(["raspi-config", "--expand-rootfs"])
         process.wait()
-        os.system("reboot")
+        os.system("sudo reboot")
+
 
 def update_youtube_dl():
     time.sleep(3)
     k.upgrade_youtubedl()
 
+
 @app.route("/update_ytdl")
 def update_ytdl():
-    if (is_admin()):
+    if is_admin():
         flash(
             "Updating youtube-dl! Should take a minute or two... ",
             "is-warning",
@@ -594,17 +747,19 @@ def update_ytdl():
         flash("You don't have permission to update youtube-dl", "is-danger")
     return redirect(url_for("home"))
 
+
 @app.route("/refresh")
 def refresh():
-    if (is_admin()):
+    if is_admin():
         k.get_available_songs()
     else:
         flash("You don't have permission to shut down", "is-danger")
     return redirect(url_for("browse"))
 
+
 @app.route("/quit")
-def quit():
-    if (is_admin()):
+def quit_app():
+    if is_admin():
         flash("Quitting pikaraoke now!", "is-warning")
         th = threading.Thread(target=delayed_halt, args=[0])
         th.start()
@@ -615,7 +770,7 @@ def quit():
 
 @app.route("/shutdown")
 def shutdown():
-    if (is_admin()): 
+    if is_admin():
         flash("Shutting down system now!", "is-danger")
         th = threading.Thread(target=delayed_halt, args=[1])
         th.start()
@@ -626,7 +781,7 @@ def shutdown():
 
 @app.route("/reboot")
 def reboot():
-    if (is_admin()): 
+    if is_admin():
         flash("Rebooting system now!", "is-danger")
         th = threading.Thread(target=delayed_halt, args=[2])
         th.start()
@@ -634,32 +789,103 @@ def reboot():
         flash("You don't have permission to Reboot", "is-danger")
     return redirect(url_for("home"))
 
+
+def set_resolution(resolution):
+    with open('resolution', mode="w") as f:
+        f.write(resolution)
+
+
+@app.route("/4kres")
+def switch_4k():
+    if is_admin():
+        resolution = "3840,2160"
+        set_resolution(resolution)
+        flash("Resolution set to 4K, reboot to apply.", "is-danger")
+    else:
+        flash("You don't have permission to change resolution", "is-danger")
+
+    return redirect(url_for("info"))
+
+
+@app.route("/2kres")
+def switch_1k():
+    if is_admin():
+        resolution = "1920,1080"
+        set_resolution(resolution)
+        flash("Resolution set to 1K, reboot to apply.", "is-danger")
+    else:
+        flash("You don't have permission to change resolution", "is-danger")
+    return redirect(url_for("info"))
+
+
+@app.route("/toggle_show_url")
+def toggle_show_url():
+    k.hide_url = not k.hide_url
+    return redirect(url_for("home"))
+
+
 @app.route("/expand_fs")
 def expand_fs():
-    if (is_admin() and raspberry_pi): 
+    if is_admin() and raspberry_pi:
         flash("Expanding filesystem and rebooting system now!", "is-danger")
         th = threading.Thread(target=delayed_halt, args=[3])
         th.start()
-    elif (not raspberry_pi):
+    elif not raspberry_pi:
         flash("Cannot expand fs on non-raspberry pi devices!", "is-danger")
     else:
         flash("You don't have permission to resize the filesystem", "is-danger")
     return redirect(url_for("home"))
 
 
+def switch_folder(foldername):
+    if is_admin():
+        download_path = k.download_path
+        base_path = os.path.dirname(download_path.rstrip('/'))
+        t_name = os.path.basename(foldername.strip('/'))
+        target = os.path.join(base_path, t_name, '')
+        logging.info("target: {}".format(target))
+        flash("new song directory: {}".format(target))
+        if os.path.exists(target):
+            k.download_path = target
+            k.get_available_songs()
+        else:
+            flash("'{}' does not exist, can not switch", "is-warning")
+    else:
+        flash("You don't have permission to change folders", "is-danger")
+
+
+@app.route("/switch_songs")
+def switch_songs():
+    switch_folder('songs')
+    return redirect(url_for("queue"))
+
+
+@app.route("/switch_messages")
+def switch_messages():
+    switch_folder('messages')
+    return redirect(url_for("browse"))
+
+
+@app.route("/switch_to/<foldername>")
+def switch_to_folder(foldername: str):
+    switch_folder(foldername)
+    return redirect(url_for("browse"))
+
+
 # Handle sigterm, apparently cherrypy won't shut down without explicit handling
 signal.signal(signal.SIGTERM, lambda signum, stack_frame: k.stop())
 
-def get_default_youtube_dl_path(platform):
-    if platform == "windows":
+
+def get_default_youtube_dl_path(os_platform):
+    if os_platform == "windows":
         return os.path.join(os.path.dirname(__file__), ".venv\\Scripts\\yt-dlp.exe")
     return os.path.join(os.path.dirname(__file__), ".venv/bin/yt-dlp")
-        
 
-def get_default_dl_dir(platform):
+
+def get_default_dl_dir(os_platform):
     if raspberry_pi:
-        return "~/pikaraoke-songs"
-    elif platform == "windows":
+        return "~/songs"
+    elif os_platform == "windows":
         legacy_directory = os.path.expanduser("~\\pikaraoke\\songs")
         if os.path.exists(legacy_directory):
             return legacy_directory
@@ -670,7 +896,7 @@ def get_default_dl_dir(platform):
         if os.path.exists(legacy_directory):
             return legacy_directory
         else:
-            return "~/pikaraoke-songs"
+            return "~/songs"
 
 
 if __name__ == "__main__":
@@ -706,7 +932,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-f",
         "--ffmpeg-port",
-        help=f"Desired ffmpeg port. This is where video stream URLs will be pointed (default: {default_ffmpeg_port})" ,
+        help=f"Desired ffmpeg port. This is where video stream URLs will be pointed (default: {default_ffmpeg_port})",
         default=default_ffmpeg_port,
         required=False,
     )
@@ -737,7 +963,7 @@ if __name__ == "__main__":
         "-s",
         "--splash-delay",
         help="Delay during splash screen between songs (in secs). (default: %s )"
-        % default_splash_delay,
+             % default_splash_delay,
         default=default_splash_delay,
         required=False,
     )
@@ -745,14 +971,15 @@ if __name__ == "__main__":
         "-t",
         "--screensaver-timeout",
         help="Delay before the screensaver begins (in secs). (default: %s )"
-        % default_screensaver_delay,
+             % default_screensaver_delay,
         default=default_screensaver_delay,
         required=False,
     )
     parser.add_argument(
         "-l",
         "--log-level",
-        help=f"Logging level int value (DEBUG: 10, INFO: 20, WARNING: 30, ERROR: 40, CRITICAL: 50). (default: {default_log_level} )",
+        help=f"Logging level int value (DEBUG: 10, INFO: 20, WARNING: 30, ERROR: 40, CRITICAL: 50). "
+             f"(default: {default_log_level} )",
         default=default_log_level,
         required=False,
     )
@@ -765,7 +992,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--prefer-hostname",
         action="store_true",
-        help=f"Use the local hostname instead of the IP as the connection URL. Use at your discretion: mDNS is not guaranteed to work on all LAN configurations. Defaults to {default_prefer_hostname}",
+        help=f"Use the local hostname instead of the IP as the connection URL. Use at your discretion: mDNS is not "
+             f"guaranteed to work on all LAN configurations. Defaults to {default_prefer_hostname}",
         default=default_prefer_hostname,
         required=False,
     )
@@ -785,7 +1013,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--high-quality",
         action="store_true",
-        help="Download higher quality video. Note: requires ffmpeg and may cause CPU, download speed, and other performance issues",
+        help="Download higher quality video. Note: requires ffmpeg and may cause CPU, "
+             "download speed, and other performance issues",
         required=False,
     )
     parser.add_argument(
@@ -794,42 +1023,55 @@ if __name__ == "__main__":
         help="Path to a custom logo image file for the splash screen. Recommended dimensions ~ 2048x1024px",
         default=None,
         required=False,
-    ),
+    )
     parser.add_argument(
         "-u",
         "--url",
         help="Override the displayed IP address with a supplied URL. This argument should include port, if necessary",
         default=None,
         required=False,
-    ),
+    )
     parser.add_argument(
         "-m",
         "--ffmpeg-url",
         help="Override the ffmpeg address with a supplied URL.",
         default=None,
         required=False,
-    ),
+    )
     parser.add_argument(
         "--hide-overlay",
         action="store_true",
         help="Hide overlay that shows on top of video with pikaraoke QR code and IP",
         required=False,
-    ),
+    )
     parser.add_argument(
         "--admin-password",
-        help="Administrator password, for locking down certain features of the web UI such as queue editing, player controls, song editing, and system shutdown. If unspecified, everyone is an admin.",
+        help="Administrator password, for locking down certain features of the web UI such as "
+             "queue editing, player controls, song editing, and system shutdown. If unspecified, "
+             "everyone is an admin.",
         default=None,
         required=False,
-    ),
+    )
+    parser.add_argument(
+        "--background",
+        default=background,
+        help=f"Set the background color of the splash screen.  Default is {background}",
+    )
 
     args = parser.parse_args()
 
-    if (args.admin_password):
+    if os.path.isfile(args.background):
+        with open(args.background) as f:
+            background = f.read().strip().splitlines()
+    else:
+        background = args.background
+    print(f"global_background {background}")
+
+    if args.admin_password:
         admin_password = args.admin_password
 
     app.jinja_env.globals.update(filename_from_path=filename_from_path)
     app.jinja_env.globals.update(url_escape=quote)
-
 
     # check if required binaries exist
     if not os.path.isfile(args.youtubedl_path):
@@ -851,7 +1093,6 @@ if __name__ == "__main__":
         parsed_volume = default_volume
 
     # Configure karaoke process
-    global k
     k = karaoke.Karaoke(
         port=args.port,
         ffmpeg_port=args.ffmpeg_port,
@@ -887,22 +1128,23 @@ if __name__ == "__main__":
     cherrypy.engine.start()
 
     # Start the splash screen using selenium
-    if not args.hide_splash_screen: 
+    driver = None
+    if not args.hide_splash_screen:
         if raspberry_pi:
             service = Service(executable_path='/usr/bin/chromedriver')
-        else: 
+        else:
             service = None
         options = Options()
 
         if args.window_size:
-            options.add_argument("--window-size=%s" % (args.window_size))
+            options.add_argument("--window-size=%s" % args.window_size)
             options.add_argument("--window-position=0,0")
-            
+
         options.add_argument("--kiosk")
         options.add_argument("--start-maximized")
         options.add_experimental_option("excludeSwitches", ['enable-automation'])
         driver = webdriver.Chrome(service=service, options=options)
-        driver.get(f"{k.url}/splash" )
+        driver.get(f"{k.url}/splash")
         driver.add_cookie({'name': 'user', 'value': 'PiKaraoke-Host'})
         # Clicking this counts as an interaction, which will allow the browser to autoplay audio
         wait = WebDriverWait(driver, 60)
@@ -914,7 +1156,8 @@ if __name__ == "__main__":
 
     # Close running processes when done
     if not args.hide_splash_screen:
-        driver.close()
+        if driver:
+            driver.close()
     cherrypy.engine.exit()
 
     sys.exit()

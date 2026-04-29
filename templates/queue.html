@@ -25,6 +25,8 @@
     var html = "";
     if (queue.length > 0) {
       queue.forEach((e, index) => {
+        loop_icon = e.loop ? "icon-loop" : "icon-loop-alt";
+        console.log(e.title, 'loop_icon:', loop_icon)
         html += `
           <tr value=${e.title}>
             <td width="20px" style="padding: 5px 0px">${index + 1}</td>
@@ -51,6 +53,14 @@
             {% if admin %}
               <td width="20px">
                 <a
+                  class="loop-button"
+                  title="${e.title}"
+                  href="/queue/edit?action=loop&song=${encodeURIComponent(e.file)}"
+                  ><i class="icon ${loop_icon}"></i>
+                </a>
+              </td>
+              <td width="20px">
+                <a
                   class="delete-button confirm-delete has-text-danger"
                   title="${e.title}"
                   href="/queue/edit?action=delete&song=${encodeURIComponent(e.file)}"
@@ -59,7 +69,7 @@
               </td>
             {% endif %}
           </tr>
-        `
+        `;
       });
     }
     else {
@@ -134,12 +144,50 @@
   {# MSG: Button text which picks three songs at random from the already downloaded songs and adds them to the queue. #}
   ><i class="icon icon-plus-circled"></i>{% trans %}Add 3 random songs{% endtrans %}</a
 >
+<a class="add-random has-text-success" href="/queue/addall"
+  {# MSG: Add all downloaded songs to the queue. #}
+><i class="icon icon-plus-circled"></i>{% trans %}Add all songs{% endtrans %}</a
+>
+{% if queue_paused %}
+<a class="add-random has-text-success" href="/queue/resume"
+        {# MSG: Resume the queue. #}
+><i class="icon icon-play-2"></i>{% trans %}Resume Queue{% endtrans %}</a
+>
+{% else %}
+<a class="add-random has-text-success" href="/queue/pause"
+        {# MSG: Pause playing the queue. #}
+><i class="icon icon-pause-2"></i>{% trans %}Pause Queue{% endtrans %}</a
+>
+{% endif %}
+{% if queue_rotate %}
+<a class="add-random has-text-success" href="/queue/norotate_songs"
+        {# MSG: Resume the queue. #}
+><i class="icon icon-switch"></i>{% trans %}UnRotate{% endtrans %}</a
+>
+{% else %}
+<a class="add-random has-text-success" href="/queue/rotate_songs"
+        {# MSG: Resume the queue. #}
+><i class="icon icon-loop-alt"></i>{% trans %}Rotate{% endtrans %}</a
+>
+{% endif %}
+
 <a
   class="confirm-clear has-text-danger is-pulled-right"
   href="/queue/edit?action=clear"
   {# MSG: Text for the button which clears the entire queue. #}
   ><i class="icon icon-trash-empty"></i>{% trans %}Clear all{% endtrans %}</a
-><br />
+>
+    {% if playlists %}
+    <form action="/queue/load_playlist/" method="get" class="d-flex" style="display: inline-block">
+        <select id="playlists" name="playlist">
+            {% for fname, label in playlists %}
+                <option value="{{ fname }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" title="Load Playlist" role="button">Go</button>
+    </form>
+    {% endif %}
+    <br />
 
 {% endif %}
 

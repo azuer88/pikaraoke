@@ -1,5 +1,7 @@
 {% extends 'base.html' %} {% block scripts %}
+{% if screensaver_enabled %}
 <script src="{{  url_for('static', filename='screensaver.js') }}"></script>
+{% endif %}
 <link
   rel="stylesheet"
   href="{{  url_for('static', filename='screensaver.css') }}"
@@ -16,9 +18,11 @@
   var mouseTimer = null,
     cursorVisible = true;
 
+  {% if screensaver_enabled %}
   var screensaverTimeoutMs =
     parseInt("{{ screensaver_timeout }}") * 1000 || 300000;
   let screensaverTimeout;
+  {% endif %}
 
   var isPlaying = false;
   var isPaused = false;
@@ -174,6 +178,7 @@
         }
       }
 
+        {% if screensaver_enabled %}
       //handle screensaver
       let screensaver = document.getElementById("screensaver");
       if (
@@ -193,6 +198,7 @@
           screensaverTimeout = clearTimeout(screensaverTimeout);
         }
       }
+        {% endif %}
     });
   }
 
@@ -303,7 +309,17 @@
 
 <div id="ap-container">
   <div class="is-size-5 stroke">
-    <div id="hostap">{% for line in hostap_info %}{{ line }}<br />{% endfor %}</div>
+    <div id="hostap">
+        {% for line in hostap_info %}{{ line }}<br />{% endfor %}
+	{% if wifi_image %}
+	<img
+	  src="{{ url_for('wifi_qrcode') }}"
+	  width="100px"
+	  style="image-rendering: pixelated"
+	  alt="qrcode"
+	/>
+	{% endif %}
+    </div>
   </div>
 </div>
 
@@ -456,7 +472,7 @@
     object-fit: contain;
   }
   body {
-    background-color: black;
+	  background-color: {{ background_color }};
   }
   #logo-container {
     display: flex;

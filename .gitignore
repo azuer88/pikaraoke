@@ -1,8 +1,13 @@
 *.pyc
 *.swp
 .vscode/
+.idea/
 .venv/
 __pycache__/
 songs/
 qrcode.png
 .DS_Store
+backgrounds*
+logos/
+test*
+resolution*

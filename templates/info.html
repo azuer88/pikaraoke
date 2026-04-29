@@ -147,7 +147,7 @@
 </p>
 <ul>
   {# MSG: Text for button which turns off Pikaraoke for everyone using it at your house. #}
-  <li><a id="quit-link" href="{{ url_for('quit') }}">{% trans %}Quit Pikaraoke{% endtrans %}</a></li>
+  <li><a id="quit-link" href="{{ url_for('quit_app') }}">{% trans %}Quit Pikaraoke{% endtrans %}</a></li>
   {% if is_pi or is_linux %}
     {# MSG: Text for button which reboots the machine running Pikaraoke. #}
     <li><a id="restart-link" href="{{ url_for('reboot') }}">{% trans %}Reboot System{% endtrans %}</a></li>
